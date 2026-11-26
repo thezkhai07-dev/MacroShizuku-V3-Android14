@@ -1,6 +1,6 @@
 package com.example.macroshizuku;
 
-import android.app.*;import android.content.*;import android.net.Uri;import android.os.*;import android.provider.Settings;import android.view.*;import android.widget.*;import java.io.*;import java.util.*;import rikka.shizuku.Shizuku;
+import android.app.*;import android.content.*;import android.content.pm.PackageManager;import android.net.Uri;import android.os.*;import android.provider.Settings;import android.view.*;import android.widget.*;import java.io.*;import java.util.*;import rikka.shizuku.Shizuku;
 
 public class MainActivity extends Activity {
     LinearLayout list; EditText name; SeekBar speed; TextView speedText; Spinner loops, hotkeyMacro; CheckBox hotkeyEnabled; static final int REQ=77, EXPORT=91, IMPORT=92;
@@ -15,6 +15,21 @@ public class MainActivity extends Activity {
         findViewById(R.id.accessibility).setOnClickListener(v->{
             try{startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));}
             catch(Exception e){toast("Không mở được cài đặt Trợ năng: "+e.getMessage());}
+        });
+        findViewById(R.id.vneidMode).setOnClickListener(v->{
+            try{
+                ComponentName service=new ComponentName(this,TouchRecordService.class);
+                getPackageManager().setComponentEnabledSetting(service,PackageManager.COMPONENT_ENABLED_STATE_DISABLED,PackageManager.DONT_KILL_APP);
+                toast("Đã ẩn dịch vụ trợ năng Macro Shizuku. Hãy thử mở lại VNeID.");
+            }catch(Exception e){toast("Không bật được chế độ tương thích VNeID: "+e.getMessage());}
+        });
+        findViewById(R.id.restoreAccessibility).setOnClickListener(v->{
+            try{
+                ComponentName service=new ComponentName(this,TouchRecordService.class);
+                getPackageManager().setComponentEnabledSetting(service,PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,PackageManager.DONT_KILL_APP);
+                toast("Đã khôi phục dịch vụ. Mở Cài đặt Trợ năng để bật lại khi cần.");
+                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            }catch(Exception e){toast("Không khôi phục được dịch vụ trợ năng: "+e.getMessage());}
         });
         speed.setProgress(100);speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){float x=Math.max(.25f,p/100f);speedText.setText(String.format(Locale.US,"Tốc độ %.2fx",x));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
         findViewById(R.id.record).setOnClickListener(v->{
