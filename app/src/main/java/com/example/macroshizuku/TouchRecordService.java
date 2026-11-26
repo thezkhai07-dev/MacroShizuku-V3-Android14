@@ -2,6 +2,8 @@ package com.example.macroshizuku;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.os.Build;
 import android.os.SystemClock;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.WindowManager;
@@ -26,8 +28,7 @@ public class TouchRecordService extends AccessibilityService {
  private volatile Thread hotkeyThread;
  private static volatile long lastHotkeyDispatchMs=0;
  private static volatile int lastHotkeyDispatchCode=0;
- private static Device touchDevice;
- private static class Device{String path;int minX,maxX,minY,maxY;Device(String p,int a,int b,int c,int d){path=p;minX=a;maxX=b;minY=c;maxY=d;}}
+ private long downTime=0,lastActionTime=0; private float downX,downY; private boolean down=false;
  public static void clear(){synchronized(actions){actions.clear();}}
  public static List<MacroStore.Action> snapshot(){synchronized(actions){return new ArrayList<>(actions);}}
  public static boolean isConnected(){return instance!=null;}
@@ -52,113 +53,56 @@ public class TouchRecordService extends AccessibilityService {
   if(instance==this)instance=null;
   return super.onUnbind(intent);
  }
- private static Device findTouchDevice(String listing){
-  // Some vendor kernels omit the words "touch" or "direct" from the device
-  // name. Prefer a named touchscreen, but accept any event device exposing
-  // both multitouch position axes as a fallback.
-  String[] blocks=listing.split("(?=add device\\s+\\d+:)");
-  Pattern pp=Pattern.compile("(/dev/input/event\\d+)");
-  Pattern px=Pattern.compile("ABS_MT_POSITION_X.*?min\\s+(-?\\d+),\\s*max\\s+(-?\\d+)",Pattern.DOTALL);
-  Pattern py=Pattern.compile("ABS_MT_POSITION_Y.*?min\\s+(-?\\d+),\\s*max\\s+(-?\\d+)",Pattern.DOTALL);
-  Device fallback=null;
-  for(String b:blocks){
-   Matcher p=pp.matcher(b),x=px.matcher(b),y=py.matcher(b);
-   if(p.find()&&x.find()&&y.find()){
-    Device candidate=new Device(p.group(1),Integer.parseInt(x.group(1)),Integer.parseInt(x.group(2)),Integer.parseInt(y.group(1)),Integer.parseInt(y.group(2)));
-    String z=b.toLowerCase(Locale.ROOT);
-    if(z.contains("touch")||z.contains("direct"))return candidate;
-    if(fallback==null)fallback=candidate;
-   }
-  }
-  return fallback;
- }
  public static boolean beginRecording(){
-  TouchRecordService s=instance;if(s==null||!ShizukuShell.ready())return false;
-  stopEventProcess();synchronized(actions){actions.clear();}pendingCapture=false;captureError="";lastActionTime=0;
+  TouchRecordService s=instance;
+  if(s==null||Build.VERSION.SDK_INT<34)return false;
+  synchronized(actions){actions.clear();}
+  pendingCapture=false;
+  s.lastActionTime=0;s.down=false;
   try{
-   String listing=ShizukuShell.run("getevent","-lp");touchDevice=findTouchDevice(listing);
-   if(touchDevice==null){captureError=listing.contains("Permission denied")?"Shizuku không có quyền đọc thiết bị cảm ứng.":"Không tìm thấy thiết bị cảm ứng hoặc getevent không được hỗ trợ.";return false;}
-   DisplayMetrics dm=new DisplayMetrics();((WindowManager)s.getSystemService(WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(dm);screenW=dm.widthPixels;screenH=dm.heightPixels;
-   eventProcess=ShizukuShell.start("getevent","-lt",touchDevice.path);final Object proc=eventProcess;final Device dev=touchDevice;
-   recording=true;captureThread=new Thread(()->readEvents(proc,dev),"touch-recorder");captureThread.start();return true;
-  }catch(Exception e){captureError="Không khởi động được bộ đọc cảm ứng: "+e.getMessage();stopEventProcess();return false;}
- }
- private static long timeMs(String line){Matcher m=Pattern.compile("\\[\\s*(\\d+)\\.(\\d+)\\]").matcher(line);if(!m.find())return System.nanoTime()/1000000L;return Long.parseLong(m.group(1))*1000L+Long.parseLong((m.group(2)+"000").substring(0,3));}
- private static int hex(String s){try{return (int)Long.parseLong(s,16);}catch(Exception e){return 0;}}
- private static int scale(int v,int min,int max,int pixels){if(max<=min||pixels<=1)return Math.max(0,v);return Math.max(0,Math.min(pixels-1,Math.round((v-min)*(pixels-1f)/(max-min))));}
- private static boolean touchPressed(String value){
-  String v=value==null?"":value.trim().toUpperCase(Locale.ROOT);
-  // getevent -lt prints EV_KEY values as DOWN/UP, not hexadecimal numbers.
-  return v.equals("DOWN")||v.equals("1")||v.equals("00000001");
- }
- private static void readEvents(Object proc,Device d){
-  boolean down=false;
-  int rx=0,ry=0,x1=0,y1=0,x2=0,y2=0;
-  long start=0;
-  long eventCount=0;
-  try(BufferedReader r=new BufferedReader(new InputStreamReader(ShizukuShell.stdout(proc),"UTF-8"))){
-   String line;
-   while(recording&&(line=r.readLine())!=null){
-    eventCount++;
-    String[] a=line.trim().split("\\s+");
-    if(a.length<4)continue;
-    String code=a[a.length-2],val=a[a.length-1];
-    long now=timeMs(line);
-    if(code.equals("ABS_MT_POSITION_X")||code.equals("ABS_X"))rx=hex(val);
-    else if(code.equals("ABS_MT_POSITION_Y")||code.equals("ABS_Y"))ry=hex(val);
-    else if(code.equals("ABS_MT_TRACKING_ID")){
-     int id=hex(val);
-     if(id!=-1&&!down){
-      down=true;start=now;
-      x1=x2=scale(rx,d.minX,d.maxX,screenW);
-      y1=y2=scale(ry,d.minY,d.maxY,screenH);
-     }else if(id==-1&&down){
-      x2=scale(rx,d.minX,d.maxX,screenW);
-      y2=scale(ry,d.minY,d.maxY,screenH);
-      save(x1,y1,x2,y2,start,now);down=false;
-     }
-    }else if(code.equals("BTN_TOUCH")||code.equals("BTN_LEFT")){
-     boolean pressed=touchPressed(val);
-     if(pressed&&!down){
-      down=true;start=now;
-      x1=x2=scale(rx,d.minX,d.maxX,screenW);
-      y1=y2=scale(ry,d.minY,d.maxY,screenH);
-     }else if(!pressed&&down){
-      x2=scale(rx,d.minX,d.maxX,screenW);
-      y2=scale(ry,d.minY,d.maxY,screenH);
-      save(x1,y1,x2,y2,start,now);down=false;
-     }
-    }
-    if(down&&(code.equals("ABS_MT_POSITION_X")||code.equals("ABS_MT_POSITION_Y")||code.equals("ABS_X")||code.equals("ABS_Y"))){
-     x2=scale(rx,d.minX,d.maxX,screenW);
-     y2=scale(ry,d.minY,d.maxY,screenH);
-    }
-   }
+   AccessibilityServiceInfo info=s.getServiceInfo();
+   info.setMotionEventSources(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+   s.setServiceInfo(info);
+   recording=true;
+   android.util.Log.i("TouchRecordService","Legacy Accessibility MotionEvent recording started; touchscreen events are captured exclusively.");
+   return true;
   }catch(Exception e){
-   if(recording)captureError=e.getMessage()==null?"Lỗi đọc cảm ứng":e.getMessage();
-   android.util.Log.e("TouchRecordService","Touch event reader failed",e);
-  }finally{
-   android.util.Log.i("TouchRecordService","Touch reader ended: events="+eventCount+", actions="+snapshot().size()+", device="+d.path);
-   if(recording){
-    recording=false;
-    pendingCapture=!snapshot().isEmpty();
-    if(!pendingCapture&&captureError.isEmpty())captureError="Luồng getevent đã dừng nhưng không nhận được thao tác cảm ứng.";
-   }
+   recording=false;
+   captureError="Không bật được chế độ ghi cảm ứng: "+e.getMessage();
+   android.util.Log.e("TouchRecordService","Unable to enable touchscreen capture",e);
+   return false;
   }
  }
- private static void save(int x1,int y1,int x2,int y2,long start,long end){long delay=lastActionTime==0?0:Math.max(0,start-lastActionTime),duration=Math.max(1,end-start);synchronized(actions){if(Math.hypot(x2-x1,y2-y1)<12)actions.add(new MacroStore.Action("tap",x1,y1,x1,y1,delay,duration));else actions.add(new MacroStore.Action("swipe",x1,y1,x2,y2,delay,Math.max(60,duration)));}lastActionTime=end;}
- private static void stopEventProcess(){recording=false;Object p=eventProcess;eventProcess=null;ShizukuShell.destroy(p);}
  public static List<MacroStore.Action> endRecording(){
-  // Give the reader a short chance to consume already-buffered release events
-  // before closing getevent; then commit a still-held touch as one final action.
-  Thread t=captureThread;
-  try{if(t!=null)t.join(180);}catch(InterruptedException ignored){Thread.currentThread().interrupt();}
   recording=false;
-  stopEventProcess();
-  try{if(t!=null)t.join(350);}catch(InterruptedException ignored){Thread.currentThread().interrupt();}
-  List<MacroStore.Action> c=snapshot();
-  pendingCapture=!c.isEmpty();
-  return c;
+  TouchRecordService s=instance;
+  if(s!=null&&Build.VERSION.SDK_INT>=34){
+   try{
+    AccessibilityServiceInfo info=s.getServiceInfo();
+    info.setMotionEventSources(0);
+    s.setServiceInfo(info);
+    s.down=false;
+   }catch(Exception e){android.util.Log.e("TouchRecordService","Unable to release touchscreen capture",e);}
+  }
+  List<MacroStore.Action> copy=snapshot();
+  pendingCapture=!copy.isEmpty();
+  return copy;
+ }
+ private void recordMotion(MotionEvent e){
+  if(!recording||Build.VERSION.SDK_INT<34)return;
+  int action=e.getActionMasked();long now=e.getEventTime();
+  if(action==MotionEvent.ACTION_DOWN){
+   downX=e.getX();downY=e.getY();down=true;downTime=now;
+  }else if(down&&action==MotionEvent.ACTION_UP){
+   float x=e.getX(),y=e.getY();
+   long delay=lastActionTime==0?0:Math.max(0,downTime-lastActionTime);
+   long duration=Math.max(1,now-downTime);
+   synchronized(actions){
+    if(Math.hypot(x-downX,y-downY)<12)actions.add(new MacroStore.Action("tap",downX,downY,downX,downY,delay,duration));
+    else actions.add(new MacroStore.Action("swipe",downX,downY,x,y,delay,Math.max(60,duration)));
+   }
+   down=false;lastActionTime=now;
+  }else if(action==MotionEvent.ACTION_CANCEL){down=false;}
  }
  @Override public void onDestroy(){endRecording();stopHotkeyMonitor();if(instance==this)instance=null;super.onDestroy();}
  private void startHotkeyMonitor(){
@@ -231,6 +175,7 @@ public class TouchRecordService extends AccessibilityService {
   if(Player.isRunning(id))return;
   Player.playOnce(this,m);
  }
+ @Override public void onMotionEvent(MotionEvent e){recordMotion(e);}
  @Override public void onAccessibilityEvent(AccessibilityEvent e){}
  @Override public void onInterrupt(){}
 }
