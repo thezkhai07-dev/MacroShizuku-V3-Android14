@@ -145,7 +145,7 @@ public class FloatingService extends Service {
     }
     private void showOverlayDialog(AlertDialog d){if(d.getWindow()!=null&&Build.VERSION.SDK_INT>=26)d.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);d.show();}
     private void backupDialog(){
-        new AlertDialog.Builder(this).setTitle("Sao lưu / khôi phục").setItems(new String[]{"Xuất file backup JSON","Nhập file backup JSON"},(d,w)->{
+        AlertDialog d=new AlertDialog.Builder(this).setTitle("Sao lưu / khôi phục").setItems(new String[]{"Xuất file backup JSON","Nhập file backup JSON"},(dialog,w)->{
             Intent i=new Intent(this,MainActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);i.putExtra("backup_action",w==0?"export":"import");startActivity(i);
         }).setNegativeButton("Hủy",null).create();showOverlayDialog(d);
     }
