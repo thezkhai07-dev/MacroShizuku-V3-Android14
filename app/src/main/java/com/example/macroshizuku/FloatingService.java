@@ -17,7 +17,7 @@ public class FloatingService extends Service {
     private int withAlpha(int color,int percent){return (color&0x00FFFFFF)|((int)(255f*percent/100f)<<24);}
     private android.graphics.drawable.GradientDrawable circle(int color){android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();d.setShape(android.graphics.drawable.GradientDrawable.OVAL);d.setColor(withAlpha(color,buttonAlpha()));d.setStroke(2,withAlpha(0xFF42D9F5,buttonAlpha()));return d;}
     private void addMacro(MacroStore.Macro m,int y){
-        int size=buttonSize();TextView b=new TextView(this);b.setText(m.name);b.setTextColor(withAlpha(Color.WHITE,buttonAlpha()));b.setTextSize(10);b.setGravity(Gravity.CENTER);b.setMaxLines(3);b.setEllipsize(android.text.TextUtils.TruncateAt.END);b.setPadding(5,5,5,5);b.setBackground(circle(buttonColor()));
+        int size=m.buttonHeight>0?Math.max(48,Math.min(400,m.buttonHeight)):buttonSize();int width=m.buttonWidth>0?Math.max(48,Math.min(400,m.buttonWidth)):buttonWidth();TextView b=new TextView(this);b.setText(m.name);b.setTextColor(withAlpha(Color.WHITE,buttonAlpha()));b.setTextSize(10);b.setGravity(Gravity.CENTER);b.setMaxLines(3);b.setEllipsize(android.text.TextUtils.TruncateAt.END);b.setPadding(5,5,5,5);b.setBackground(circle(buttonColor()));
         b.setContentDescription(m.name+(m.loops==1?" - chạm để chạy một lần":" - giữ để chạy, thả để dừng"));
         String key="macro_"+m.id+"_";int x=prefs().getInt(key+"x",20),py=prefs().getInt(key+"y",y);
         b.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;boolean moved,started;public boolean onTouch(View q,MotionEvent e){
@@ -26,7 +26,7 @@ public class FloatingService extends Service {
             if(e.getAction()==MotionEvent.ACTION_MOVE){float dx=e.getRawX()-sx,dy=e.getRawY()-sy;if(Math.abs(dx)+Math.abs(dy)>12)moved=true;if(moved&&!locked()){lp.x=ox+(int)dx;lp.y=oy+(int)dy;wm.updateViewLayout(q,lp);}return true;}
             if(e.getAction()==MotionEvent.ACTION_UP||e.getAction()==MotionEvent.ACTION_CANCEL){if(m.loops!=1&&started)Player.stop(m.id);if(!moved&&m.loops==1&&e.getAction()==MotionEvent.ACTION_UP)Player.play(FloatingService.this,m);if(moved&&!locked())prefs().edit().putInt(key+"x",lp.x).putInt(key+"y",lp.y).apply();return true;}return true;
         }});
-        WindowManager.LayoutParams lp=params(x,py);lp.width=buttonWidth();lp.height=size;wm.addView(b,lp);views.add(b);
+        WindowManager.LayoutParams lp=params(x,py);lp.width=width;lp.height=size;wm.addView(b,lp);views.add(b);
     }
     private void addToggle(int y){TextView t=new TextView(this);t.setText(collapsed?"＋":"☰");t.setTextSize(20);t.setTextColor(Color.WHITE);t.setGravity(Gravity.CENTER);t.setBackground(circle(0xEE263B59));t.setOnClickListener(v->{collapsed=!collapsed;refresh();});makeDraggable(t,"toggle");WindowManager.LayoutParams p=params(prefs().getInt("togglex",20),prefs().getInt("toggley",y));p.width=52;p.height=52;wm.addView(t,p);views.add(t);}
     private void addLock(int y){TextView t=new TextView(this);t.setText(locked()?"🔒":"🔓");t.setTextSize(19);t.setGravity(Gravity.CENTER);t.setBackground(circle(0xEE263B59));t.setContentDescription(locked()?"Mở khóa vị trí nút nổi":"Khóa vị trí nút nổi");t.setOnClickListener(v->{prefs().edit().putBoolean("locked",!locked()).apply();refresh();});makeDraggable(t,"lock");WindowManager.LayoutParams p=params(prefs().getInt("lockx",80),prefs().getInt("locky",y));p.width=52;p.height=52;wm.addView(t,p);views.add(t);}
