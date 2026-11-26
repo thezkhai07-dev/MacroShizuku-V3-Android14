@@ -17,20 +17,17 @@ public class MainActivity extends Activity {
             catch(Exception e){toast("Không mở được cài đặt Trợ năng: "+e.getMessage());}
         });
         findViewById(R.id.vneidMode).setOnClickListener(v->{
-            try{
-                ComponentName service=new ComponentName(this,TouchRecordService.class);
-                getPackageManager().setComponentEnabledSetting(service,PackageManager.COMPONENT_ENABLED_STATE_DISABLED,PackageManager.DONT_KILL_APP);
-                toast("Đã ẩn dịch vụ trợ năng Macro Shizuku. Hãy thử mở lại VNeID.");
-            }catch(Exception e){toast("Không bật được chế độ tương thích VNeID: "+e.getMessage());}
+            setVneidCompatibilityMode(true);
+            toast("Đã khóa chế độ VNeID. Macro Shizuku sẽ không tự bật lại Trợ năng.");
         });
         findViewById(R.id.restoreAccessibility).setOnClickListener(v->{
-            try{
-                ComponentName service=new ComponentName(this,TouchRecordService.class);
-                getPackageManager().setComponentEnabledSetting(service,PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,PackageManager.DONT_KILL_APP);
-                toast("Đã khôi phục dịch vụ. Mở Cài đặt Trợ năng để bật lại khi cần.");
-                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-            }catch(Exception e){toast("Không khôi phục được dịch vụ trợ năng: "+e.getMessage());}
+            setVneidCompatibilityMode(false);
+            toast("Đã mở khóa chế độ VNeID. Bạn có thể bật Trợ năng thủ công khi cần.");
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
         });
+        // Re-apply the user's VNeID choice whenever the app is opened.
+        if(getSharedPreferences("compatibility",MODE_PRIVATE).getBoolean("vneid_mode",false))
+            setVneidCompatibilityMode(true);
         speed.setProgress(100);speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){float x=Math.max(.25f,p/100f);speedText.setText(String.format(Locale.US,"Tốc độ %.2fx",x));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
         findViewById(R.id.record).setOnClickListener(v->{
             String macroName=name.getText().toString().trim();
@@ -83,6 +80,14 @@ public class MainActivity extends Activity {
         findViewById(R.id.saveHotkey).setOnClickListener(v->saveHotkeys());
         findViewById(R.id.exportBtn).setOnClickListener(v->exportData()); findViewById(R.id.importBtn).setOnClickListener(v->importData());
         refresh();
+    }
+    private void setVneidCompatibilityMode(boolean enabled){
+        getSharedPreferences("compatibility",MODE_PRIVATE).edit().putBoolean("vneid_mode",enabled).commit();
+        ComponentName service=new ComponentName(this,TouchRecordService.class);
+        getPackageManager().setComponentEnabledSetting(service,
+            enabled?PackageManager.COMPONENT_ENABLED_STATE_DISABLED:PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,
+            PackageManager.DONT_KILL_APP);
+        android.util.Log.i("MacroShizuku","VNeID compatibility mode="+enabled);
     }
     private void saveHotkeys(){String id="";int pos=hotkeyMacro.getSelectedItemPosition();List<MacroStore.Macro> ms=MacroStore.all(this);if(pos>=0&&pos<ms.size())id=ms.get(pos).id;getSharedPreferences("hotkeys",MODE_PRIVATE).edit().putBoolean("enabled",hotkeyEnabled.isChecked()).putString("selected_id",id).apply();toast("Đã lưu: Volume Up = chạy 1 lần • Volume Down = STOP ALL (trừ khi đang ghi)");}
     private int loopValue(){int p=loops.getSelectedItemPosition();return p==0?1:p==1?5:p==2?10:0;}
