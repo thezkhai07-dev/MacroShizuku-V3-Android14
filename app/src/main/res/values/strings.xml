@@ -1,0 +1,5 @@
+<resources>
+<string name="app_name">Macro Shizuku V3</string>
+<string name="accessibility_desc">Ghi thao tác chạm và phím âm lượng để kích hoạt macro.</string>
+<string-array name="loops"><item>1 lần</item><item>5 lần</item><item>10 lần</item><item>Vô hạn</item></string-array>
+</resources>

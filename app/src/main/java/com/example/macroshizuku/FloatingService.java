@@ -1,0 +1,16 @@
+package com.example.macroshizuku;
+
+import android.app.*;import android.content.*;import android.graphics.Color;import android.graphics.PixelFormat;import android.os.*;import android.provider.Settings;import android.view.*;import android.widget.*;import java.util.*;
+
+public class FloatingService extends Service {
+    private WindowManager wm; private final List<View> views=new ArrayList<>();
+    @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);refresh();}
+    private void refresh(){for(View v:views)try{wm.removeView(v);}catch(Exception ignored){}views.clear();List<MacroStore.Macro> ms=MacroStore.all(this);int y=80;for(MacroStore.Macro m:ms)if(m.floating){addMacro(m,y);y+=68;}addStopAll(y);}
+    private WindowManager.LayoutParams params(int x,int y){int type=Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE;WindowManager.LayoutParams p=new WindowManager.LayoutParams(-2,-2,type,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,PixelFormat.TRANSLUCENT);p.gravity=Gravity.TOP|Gravity.START;p.x=x;p.y=y;return p;}
+    private void addMacro(MacroStore.Macro m,int y){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.HORIZONTAL);box.setPadding(6,3,6,3);box.setBackgroundColor(0xDD202124);TextView n=new TextView(this);n.setText(m.name);n.setTextColor(Color.WHITE);n.setGravity(Gravity.CENTER_VERTICAL);n.setPadding(6,0,10,0);Button b=new Button(this);b.setText(Player.isRunning(m.id)?"■":"▶");b.setOnClickListener(v->{if(Player.isRunning(m.id))Player.stop(m.id);else Player.play(this,m);b.setText(Player.isRunning(m.id)?"■":"▶");});box.addView(n,new LinearLayout.LayoutParams(0,60,1));box.addView(b,new LinearLayout.LayoutParams(90,60));makeDraggable(box);wm.addView(box,params(20,y));views.add(box);}
+    private void addStopAll(int y){Button b=new Button(this);b.setText("STOP ALL");b.setTextColor(Color.WHITE);b.setBackgroundColor(0xFFB00020);b.setOnClickListener(v->Player.stopAll());makeDraggable(b);wm.addView(b,params(20,y));views.add(b);}
+    private void makeDraggable(View v){v.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;boolean moved;public boolean onTouch(View q,MotionEvent e){WindowManager.LayoutParams p=(WindowManager.LayoutParams)q.getLayoutParams();if(e.getAction()==0){sx=e.getRawX();sy=e.getRawY();ox=p.x;oy=p.y;moved=false;return true;}if(e.getAction()==2){float dx=e.getRawX()-sx,dy=e.getRawY()-sy;if(Math.abs(dx)+Math.abs(dy)>10)moved=true;p.x=ox+(int)dx;p.y=oy+(int)dy;wm.updateViewLayout(q,p);return true;}if(e.getAction()==1&&!moved)q.performClick();return true;}});}
+    @Override public int onStartCommand(Intent i,int f,int id){if("REFRESH".equals(i!=null?i.getAction():null))refresh();return START_STICKY;}
+    @Override public void onDestroy(){for(View v:views)try{wm.removeView(v);}catch(Exception ignored){}views.clear();Player.stopAll();super.onDestroy();}
+    @Override public IBinder onBind(Intent i){return null;}
+}
