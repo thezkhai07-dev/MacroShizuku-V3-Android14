@@ -7,6 +7,8 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.view.accessibility.AccessibilityEvent;
 import java.util.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import android.content.SharedPreferences;
 
 /** Legacy Android 14 AccessibilityService touch capture; touchscreen input is withheld from target apps while recording. */
@@ -16,7 +18,6 @@ public class TouchRecordService extends AccessibilityService {
  private static volatile boolean pendingCapture=false;
  private static final List<MacroStore.Action> actions=new ArrayList<>();
  private static volatile String captureError="";
- private static long lastActionTime=0;
  private static int screenW=0,screenH=0;
  private volatile Object hotkeyProcess;
  private volatile Thread hotkeyThread;
