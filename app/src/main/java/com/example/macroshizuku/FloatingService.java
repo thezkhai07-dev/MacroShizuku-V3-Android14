@@ -141,13 +141,13 @@ public class FloatingService extends Service {
     private void colorDialog(){
         String[] names={"Xanh navy","Xanh dương","Cyan","Tím","Đỏ","Cam","Xanh lá","Đen","Trắng"};
         int[] colors={0xFF202F4A,0xFF2457C5,0xFF00A6C7,0xFF7040B8,0xFFC83E5A,0xFFE07824,0xFF258653,0xFF151515,0xFFEEEEEE};
-        new AlertDialog.Builder(this).setTitle("Màu nút macro").setItems(names,(d,w)->{prefs().edit().putInt("color",colors[w]).apply();refresh();}).setNegativeButton("Hủy",null).create().show();
+        AlertDialog d=new AlertDialog.Builder(this).setTitle("Màu nút macro").setItems(names,(dialog,w)->{prefs().edit().putInt("color",colors[w]).apply();refresh();}).setNegativeButton("Hủy",null).create();showOverlayDialog(d);
     }
-    private void showOverlayDialog(AlertDialog d){d.getWindow();d.show();if(d.getWindow()!=null&&Build.VERSION.SDK_INT>=26)d.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);}
+    private void showOverlayDialog(AlertDialog d){if(d.getWindow()!=null&&Build.VERSION.SDK_INT>=26)d.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);d.show();}
     private void backupDialog(){
         new AlertDialog.Builder(this).setTitle("Sao lưu / khôi phục").setItems(new String[]{"Xuất file backup JSON","Nhập file backup JSON"},(d,w)->{
             Intent i=new Intent(this,MainActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);i.putExtra("backup_action",w==0?"export":"import");startActivity(i);
-        }).setNegativeButton("Hủy",null).show();
+        }).setNegativeButton("Hủy",null).create();showOverlayDialog(d);
     }
     private void openAccessibility(){try{Intent i=new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}catch(Exception e){toast("Không mở được cài đặt Trợ năng.");}}
     private void openShizuku(){try{Intent i=getPackageManager().getLaunchIntentForPackage("moe.shizuku.privileged.api");if(i!=null){i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}else toast("Chưa tìm thấy ứng dụng Shizuku.");}catch(Exception e){toast("Không mở được Shizuku.");}}
