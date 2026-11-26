@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 /** Small draggable shortcut that opens Android Accessibility settings. */
 public class AccessibilityShortcutService extends Service {
+    public static boolean isRunning = false;
     private WindowManager windowManager;
     private TextView bubble;
     private WindowManager.LayoutParams params;
@@ -23,10 +24,7 @@ public class AccessibilityShortcutService extends Service {
 
     @Override public void onCreate() {
         super.onCreate();
-        if (!Settings.canDrawOverlays(this)) {
-            stopSelf();
-            return;
-        }
+        if (!Settings.canDrawOverlays(this)) { stopSelf(); return; }
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         bubble = new TextView(this);
         bubble.setText("♿");
@@ -40,76 +38,40 @@ public class AccessibilityShortcutService extends Service {
         bubble.setBackground(bg);
         bubble.setElevation(8f);
         bubble.setContentDescription("Mở cài đặt Trợ năng Macro Shizuku");
-        params = new WindowManager.LayoutParams(
-                dp(56), dp(56),
-                Build.VERSION.SDK_INT >= 26
-                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                        : WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+        params = new WindowManager.LayoutParams(dp(56), dp(56),
+                Build.VERSION.SDK_INT >= 26 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
         params.gravity = Gravity.TOP | Gravity.START;
-        params.x = dp(16);
-        params.y = dp(260);
+        params.x = dp(16); params.y = dp(260);
         bubble.setOnTouchListener(new View.OnTouchListener() {
-            float downX, downY;
-            int startX, startY;
-            boolean moved;
+            float downX, downY; int startX, startY; boolean moved;
             public boolean onTouch(View v, MotionEvent e) {
                 if (e.getAction() == MotionEvent.ACTION_DOWN) {
-                    downX = e.getRawX(); downY = e.getRawY();
-                    startX = params.x; startY = params.y; moved = false;
-                    return true;
+                    downX=e.getRawX(); downY=e.getRawY(); startX=params.x; startY=params.y; moved=false; return true;
                 }
                 if (e.getAction() == MotionEvent.ACTION_MOVE) {
-                    float dx = e.getRawX() - downX, dy = e.getRawY() - downY;
-                    if (Math.abs(dx) + Math.abs(dy) > dp(8)) moved = true;
-                    if (moved) {
-                        params.x = startX + (int) dx;
-                        params.y = startY + (int) dy;
-                        try { windowManager.updateViewLayout(bubble, params); } catch (Exception ignored) {}
-                    }
+                    float dx=e.getRawX()-downX, dy=e.getRawY()-downY;
+                    if (Math.abs(dx)+Math.abs(dy)>dp(8)) moved=true;
+                    if (moved) { params.x=startX+(int)dx; params.y=startY+(int)dy; try { windowManager.updateViewLayout(bubble,params); } catch(Exception ignored){} }
                     return true;
                 }
                 if (e.getAction() == MotionEvent.ACTION_UP) {
-                    if (!moved) {
-                        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent);
-                    }
+                    if (!moved) { Intent i=new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); }
                     return true;
                 }
                 return true;
             }
         });
-        try {
-            windowManager.addView(bubble, params);
-            attached = true;
-        } catch (Exception e) {
-            stopSelf();
-        }
+        try { windowManager.addView(bubble,params); attached=true; isRunning=true; }
+        catch(Exception e) { stopSelf(); }
     }
-
-    private int dp(float value) {
-        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
-    }
-
-    @Override public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_NOT_STICKY;
-    }
-
-    @Override public void onTaskRemoved(Intent rootIntent) {
-        stopSelf();
-        super.onTaskRemoved(rootIntent);
-    }
-
+    private int dp(float value) { return (int)(value*getResources().getDisplayMetrics().density+0.5f); }
+    @Override public int onStartCommand(Intent intent,int flags,int startId) { return START_NOT_STICKY; }
+    @Override public void onTaskRemoved(Intent rootIntent) { stopSelf(); super.onTaskRemoved(rootIntent); }
     @Override public void onDestroy() {
-        if (attached && windowManager != null && bubble != null) {
-            try { windowManager.removeView(bubble); } catch (Exception ignored) {}
-        }
-        attached = false;
-        super.onDestroy();
+        if(attached && windowManager!=null && bubble!=null) try { windowManager.removeView(bubble); } catch(Exception ignored){}
+        attached=false; isRunning=false; super.onDestroy();
     }
-
     @Override public IBinder onBind(Intent intent) { return null; }
 }
