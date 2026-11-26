@@ -48,22 +48,27 @@ public class MainActivity extends Activity {
         });
         findViewById(R.id.floatBtn).setOnClickListener(v->{if(!Settings.canDrawOverlays(this)){toast("Hãy cấp quyền cửa sổ nổi.");return;}startService(new Intent(this,FloatingService.class));});
         SeekBar floatSize=findViewById(R.id.floatSize);
+        SeekBar floatWidth=findViewById(R.id.floatWidth);
         SeekBar floatAlpha=findViewById(R.id.floatAlpha);
         TextView floatSizeText=findViewById(R.id.floatSizeText);
+        TextView floatWidthText=findViewById(R.id.floatWidthText);
         TextView floatAlphaText=findViewById(R.id.floatAlphaText);
         android.content.SharedPreferences floatPrefs=getSharedPreferences("floating_style",MODE_PRIVATE);
         floatSize.setProgress(Math.max(0,Math.min(152,floatPrefs.getInt("size",72)-48)));
+        floatWidth.setProgress(Math.max(0,Math.min(252,floatPrefs.getInt("width",floatSize.getProgress()+48)-48)));
         floatAlpha.setProgress(floatPrefs.getInt("alpha",85));
-        floatSizeText.setText("Kích thước: "+(floatSize.getProgress()+48)+" dp");
+        floatSizeText.setText("Chiều cao: "+(floatSize.getProgress()+48)+" dp");
+        floatWidthText.setText("Chiều rộng: "+(floatWidth.getProgress()+48)+" dp");
         floatAlphaText.setText("Độ trong suốt: "+floatAlpha.getProgress()+"%");
         SeekBar.OnSeekBarChangeListener styleListener=new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
-                floatSizeText.setText("Kích thước: "+(floatSize.getProgress()+48)+" dp");
+                floatSizeText.setText("Chiều cao: "+(floatSize.getProgress()+48)+" dp");
+                floatWidthText.setText("Chiều rộng: "+(floatWidth.getProgress()+48)+" dp");
                 floatAlphaText.setText("Độ trong suốt: "+floatAlpha.getProgress()+"%");
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){
-                floatPrefs.edit().putInt("size",Math.min(200,floatSize.getProgress()+48)).putInt("alpha",floatAlpha.getProgress()).apply();
+                floatPrefs.edit().putInt("size",Math.min(200,floatSize.getProgress()+48)).putInt("width",Math.min(300,floatWidth.getProgress()+48)).putInt("alpha",floatAlpha.getProgress()).apply();
                 if(FloatingService.isRunning && Settings.canDrawOverlays(MainActivity.this))
                     startService(new Intent(MainActivity.this,FloatingService.class).setAction("REFRESH"));
             }
@@ -74,6 +79,7 @@ public class MainActivity extends Activity {
             new AlertDialog.Builder(this).setTitle("Màu nút macro").setItems(labels,(d,w)->{floatPrefs.edit().putInt("color",colors[w]).apply();if(FloatingService.isRunning&&Settings.canDrawOverlays(this))startService(new Intent(this,FloatingService.class).setAction("REFRESH"));}).setNegativeButton("Hủy",null).show();
         });
         floatSize.setOnSeekBarChangeListener(styleListener);
+        floatWidth.setOnSeekBarChangeListener(styleListener);
         floatAlpha.setOnSeekBarChangeListener(styleListener);
 
         findViewById(R.id.stopAll).setOnClickListener(v->Player.stopAll());
