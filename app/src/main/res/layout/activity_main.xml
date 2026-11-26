@@ -16,6 +16,9 @@
             <Button android:id="@+id/shizuku" android:text="1. Cấp quyền Shizuku" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <Button android:id="@+id/overlay" android:text="2. Cấp quyền cửa sổ nổi" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <Button android:id="@+id/accessibility" android:text="3. BẬT TRỢ NĂNG MACRO SHIZUKU" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/vneidMode" android:text="CHẾ ĐỘ VNeID: ẨN DỊCH VỤ TRỢ NĂNG" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/restoreAccessibility" android:text="KHÔI PHỤC DỊCH VỤ TRỢ NĂNG" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <TextView android:text="Chế độ VNeID sẽ vô hiệu hóa thành phần dịch vụ trợ năng của Macro Shizuku để ứng dụng khác không liệt kê dịch vụ này. Macro và ghi chạm sẽ tạm ngừng cho đến khi khôi phục và bật lại trợ năng." android:textColor="#F6C66A" android:textSize="12sp" android:paddingTop="6dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         </LinearLayout>
         <LinearLayout android:orientation="vertical" android:padding="14dp" android:layout_marginTop="12dp"
             android:background="@drawable/bg_panel" android:layout_width="match_parent" android:layout_height="wrap_content">
