@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
         TextView floatSizeText=findViewById(R.id.floatSizeText);
         TextView floatAlphaText=findViewById(R.id.floatAlphaText);
         android.content.SharedPreferences floatPrefs=getSharedPreferences("floating_style",MODE_PRIVATE);
-        floatSize.setProgress(floatPrefs.getInt("size",64)-48);
+        floatSize.setProgress(Math.max(0,Math.min(80,floatPrefs.getInt("size",72)-48)));
         floatAlpha.setProgress(floatPrefs.getInt("alpha",85));
         floatSizeText.setText("Kích thước: "+(floatSize.getProgress()+48)+" dp");
         floatAlphaText.setText("Độ trong suốt: "+floatAlpha.getProgress()+"%");
