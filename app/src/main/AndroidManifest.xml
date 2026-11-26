@@ -10,6 +10,7 @@
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility_service_config"/>
         </service>
         <service android:name=".FloatingService" android:exported="false"/>
+        <service android:name=".AccessibilityShortcutService" android:exported="false"/>
         <provider android:name="rikka.shizuku.ShizukuProvider" android:authorities="${applicationId}.shizuku" android:multiprocess="false" android:enabled="true" android:exported="true" android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
     </application>
 </manifest>
