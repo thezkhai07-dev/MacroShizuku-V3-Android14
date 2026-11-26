@@ -6,21 +6,15 @@ import android.view.MotionEvent;
 import android.os.Build;
 import android.os.SystemClock;
 import android.view.accessibility.AccessibilityEvent;
-import android.view.WindowManager;
-import android.util.DisplayMetrics;
-import java.io.*;
 import java.util.*;
-import java.util.regex.*;
 import android.content.SharedPreferences;
 
-/** Records read-only kernel touch events through Shizuku; touches continue to reach apps. */
+/** Legacy Android 14 AccessibilityService touch capture; touchscreen input is withheld from target apps while recording. */
 public class TouchRecordService extends AccessibilityService {
  public static volatile boolean recording=false;
  private static volatile TouchRecordService instance;
  private static volatile boolean pendingCapture=false;
  private static final List<MacroStore.Action> actions=new ArrayList<>();
- private static Object eventProcess;
- private static Thread captureThread;
  private static volatile String captureError="";
  private static long lastActionTime=0;
  private static int screenW=0,screenH=0;
@@ -39,11 +33,12 @@ public class TouchRecordService extends AccessibilityService {
   super.onServiceConnected();
   instance=this;
   captureError="";
-  // Keep the service configuration static. Vivo ROMs may restart or drop
-  // accessibility services when their runtime configuration is rewritten.
-  // Key filtering is declared in XML. Also monitor input events through Shizuku
-  // as a fallback because some vendor ROMs do not forward volume keys to
-  // AccessibilityService.onKeyEvent(). This reader is passive and never injects touch.
+  try{
+   AccessibilityServiceInfo info=getServiceInfo();
+   info.flags|=AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
+   if(Build.VERSION.SDK_INT>=34)info.setMotionEventSources(0);
+   setServiceInfo(info);
+  }catch(Exception e){android.util.Log.e("TouchRecordService","Unable to initialize accessibility configuration",e);}
   startHotkeyMonitor();
  }
  @Override public boolean onUnbind(android.content.Intent intent){
@@ -58,7 +53,7 @@ public class TouchRecordService extends AccessibilityService {
   if(s==null||Build.VERSION.SDK_INT<34)return false;
   synchronized(actions){actions.clear();}
   pendingCapture=false;
-  s.lastActionTime=0;s.down=false;
+  s.lastActionTime=0;s.down=false;captureError="";
   try{
    AccessibilityServiceInfo info=s.getServiceInfo();
    info.setMotionEventSources(android.view.InputDevice.SOURCE_TOUCHSCREEN);
