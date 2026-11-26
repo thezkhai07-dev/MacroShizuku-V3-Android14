@@ -17,15 +17,10 @@ public class MainActivity extends Activity {
         findViewById(R.id.record).setOnClickListener(v->{
             String macroName=name.getText().toString().trim();
             if(macroName.isEmpty())macroName="Macro "+(MacroStore.all(this).size()+1);
-            if(Build.VERSION.SDK_INT<34){toast("Ghi chạm yêu cầu Android 14 trở lên.");return;}
             if(!TouchRecordService.isConnected()){toast("Hãy bật Macro Shizuku trong cài đặt Trợ năng trước.");return;}
-            final String finalName=macroName;
-            new AlertDialog.Builder(this).setTitle("Lưu ý khi ghi chạm")
-                .setMessage("Android 14 không chuyển tiếp các sự kiện cảm ứng mà AccessibilityService đang theo dõi tới ứng dụng đích. Trong lúc ghi, thao tác chạm sẽ không tới ứng dụng đang mở; vì vậy chức năng này hiện chỉ thử nghiệm, chưa thể ghi macro tương tác bình thường. Volume Down kết thúc chế độ ghi.")
-                .setPositiveButton("Bắt đầu ghi",(d,w)->{
-                    if(TouchRecordService.beginRecording()){name.setTag(finalName);toast("Đang ghi: "+finalName+" • Volume Down để kết thúc");}
-                    else toast("Không bật được chế độ ghi chạm.");
-                }).setNegativeButton("Hủy",null).show();
+            if(!ShizukuShell.ready()){toast("Hãy mở Shizuku và cấp quyền cho Macro Shizuku.");return;}
+            if(TouchRecordService.beginRecording()){name.setTag(macroName);toast("Đang ghi: "+macroName+" • Bạn vẫn thao tác bình thường • Volume Down để kết thúc");}
+            else toast(TouchRecordService.getCaptureError().isEmpty()?"Không bật được chế độ ghi chạm.":TouchRecordService.getCaptureError());
         });
         findViewById(R.id.stop).setOnClickListener(v->{
             if(!TouchRecordService.recording && !TouchRecordService.hasPendingCapture()){toast("Chưa có bản ghi để lưu.");return;}
