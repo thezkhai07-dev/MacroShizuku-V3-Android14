@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
         TextView floatSizeText=findViewById(R.id.floatSizeText);
         TextView floatAlphaText=findViewById(R.id.floatAlphaText);
         android.content.SharedPreferences floatPrefs=getSharedPreferences("floating_style",MODE_PRIVATE);
-        floatSize.setProgress(Math.max(0,Math.min(80,floatPrefs.getInt("size",72)-48)));
+        floatSize.setProgress(Math.max(0,Math.min(152,floatPrefs.getInt("size",72)-48)));
         floatAlpha.setProgress(floatPrefs.getInt("alpha",85));
         floatSizeText.setText("Kích thước: "+(floatSize.getProgress()+48)+" dp");
         floatAlphaText.setText("Độ trong suốt: "+floatAlpha.getProgress()+"%");
@@ -53,12 +53,12 @@ public class MainActivity extends Activity {
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){
-                floatPrefs.edit().putInt("size",floatSize.getProgress()+48).putInt("alpha",floatAlpha.getProgress()).apply();
+                floatPrefs.edit().putInt("size",Math.min(200,floatSize.getProgress()+48)).putInt("alpha",floatAlpha.getProgress()).apply();
                 if(FloatingService.isRunning && Settings.canDrawOverlays(MainActivity.this))
                     startService(new Intent(MainActivity.this,FloatingService.class).setAction("REFRESH"));
             }
         };
-        floatSize.setOnSeekBarChangeListener(styleListener);
+        findViewById(R.id.floatColor).setOnClickListener(v->{\n            String[] labels={"Xanh navy","Xanh dương","Xanh cyan","Tím","Đỏ","Cam","Xanh lá","Đen","Trắng"};\n            int[] colors={0xFF202F4A,0xFF2457C5,0xFF00A6C7,0xFF7040B8,0xFFC83E5A,0xFFE07824,0xFF258653,0xFF151515,0xFFEEEEEE};\n            new AlertDialog.Builder(this).setTitle("Màu nút macro").setItems(labels,(d,w)->{floatPrefs.edit().putInt("color",colors[w]).apply();if(FloatingService.isRunning&&Settings.canDrawOverlays(this))startService(new Intent(this,FloatingService.class).setAction("REFRESH"));}).setNegativeButton("Hủy",null).show();\n        });\n        floatSize.setOnSeekBarChangeListener(styleListener);
         floatAlpha.setOnSeekBarChangeListener(styleListener);
 
         findViewById(R.id.stopAll).setOnClickListener(v->Player.stopAll());
