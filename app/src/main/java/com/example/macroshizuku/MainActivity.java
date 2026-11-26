@@ -5,7 +5,7 @@ import android.app.*;import android.content.*;import android.net.Uri;import andr
 public class MainActivity extends Activity {
     LinearLayout list; EditText name; SeekBar speed; TextView speedText; Spinner loops, hotkeyMacro; CheckBox hotkeyEnabled; static final int REQ=77, EXPORT=91, IMPORT=92;
     private final Shizuku.OnRequestPermissionResultListener permissionListener=(requestCode,grantResult)->runOnUiThread(()->{
-        if(requestCode==REQ)toast(grantResult==0?"Đã cấp quyền Shizuku.":"Bạn chưa cấp quyền Shizuku.");
+        if(requestCode==REQ){if(grantResult==0){toast("Đã cấp quyền Shizuku.");enableAccessibilityWithShizuku();}else toast("Bạn chưa cấp quyền Shizuku.");}
     });
     @Override public void onCreate(Bundle b){super.onCreate(b);Shizuku.addRequestPermissionResultListener(permissionListener);setContentView(R.layout.activity_main);
         list=findViewById(R.id.macroList);name=findViewById(R.id.name);speed=findViewById(R.id.speed);speedText=findViewById(R.id.speedText);loops=findViewById(R.id.loops);hotkeyMacro=findViewById(R.id.hotkeyMacro);hotkeyEnabled=findViewById(R.id.hotkeyEnabled);
@@ -67,33 +67,39 @@ public class MainActivity extends Activity {
         refresh();
     }
     private void enableAccessibilityWithShizuku(){
-        android.content.ComponentName service=new android.content.ComponentName(this,TouchRecordService.class);
-        try{
-            // Mở trực tiếp màn hình cấu hình lối tắt, chỉ lọc Macro Shizuku V3.
-            // Android Settings đọc danh sách mục tiêu từ Bundle ":settings:show_fragment_args",
-            // với khóa "targets" chứa component.flattenToString().
-            Bundle args=new Bundle();
-            args.putStringArray("targets",new String[]{service.flattenToString()});
-            Intent shortcut=new Intent("android.settings.ACCESSIBILITY_SHORTCUT_SETTINGS");
-            shortcut.putExtra(":settings:show_fragment_args",args);
-            shortcut.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(shortcut);
+        if(!Shizuku.pingBinder()){
+            toast("Hãy khởi động Shizuku Next rồi nhấn nút này lần nữa.");
             return;
-        }catch(Throwable ignored){}
-        try{
-            Intent detail=new Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS");
-            detail.putExtra("android.intent.extra.COMPONENT_NAME",service);
-            detail.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(detail);
-            toast("Nếu chưa bật Trợ năng, hãy bật Macro Shizuku V3 trước rồi mở lại mục Lối tắt.");
-        }catch(Throwable ignored){
-            try{
-                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-                toast("Chọn Macro Shizuku V3, bật Cho phép, sau đó vào Lối tắt để tạo lối tắt.");
-            }catch(Throwable e){
-                toast("Không mở được cài đặt Trợ năng: "+e.getMessage());
-            }
         }
+        if(!ShizukuShell.ready()){
+            try{Shizuku.requestPermission(REQ);toast("Hãy cấp quyền Shizuku cho Macro Shizuku; cấp xong app sẽ tự bật Trợ năng.");}
+            catch(Throwable e){toast("Không yêu cầu được quyền Shizuku: "+e.getMessage());}
+            return;
+        }
+        toast("Đang bật Trợ năng Macro Shizuku bằng Shizuku...");
+        new Thread(()->{
+            String component=getPackageName()+"/"+TouchRecordService.class.getName();
+            String script="component='"+component+"'; "+
+                "current=$(settings get secure enabled_accessibility_services 2>&1) || exit 11; "+
+                "[ \\"$current\\" = \\"null\\" ] && current=''; "+
+                "case \\":$current:\\" in *\\":$component:\\"*) ;; *) current=\\"\${current:+$current:}$component\\" ;; esac; "+
+                "settings put secure enabled_accessibility_services \\"$current\\" || exit 12; "+
+                "settings put secure accessibility_enabled 1 || exit 13; "+
+                "sleep 1; "+
+                "check=$(settings get secure enabled_accessibility_services 2>&1); "+
+                "master=$(settings get secure accessibility_enabled 2>&1); "+
+                "case \\":$check:\\" in *\\":$component:\\"*) [ \\"$master\\" = \\"1\\" ] && echo MACRO_A11Y_ENABLED || echo MASTER_SWITCH_FAILED ;; *) echo SERVICE_WRITE_FAILED ;; esac";
+            String result;
+            try{result=ShizukuShell.run("sh","-c",script);}
+            catch(Throwable e){result="ERROR: "+e.getMessage();}
+            final String output=result==null?"":result.trim();
+            runOnUiThread(()->{
+                if(output.contains("MACRO_A11Y_ENABLED"))toast("Đã bật Trợ năng Macro Shizuku. Đang chờ Android kết nối dịch vụ.");
+                else if(output.contains("SERVICE_WRITE_FAILED"))toast("Vivo đã chặn ghi danh sách Trợ năng. Hãy kiểm tra quyền Shizuku/giới hạn cài đặt.");
+                else if(output.contains("MASTER_SWITCH_FAILED"))toast("Đã thêm dịch vụ nhưng công tắc Trợ năng hệ thống chưa bật.");
+                else toast("Không bật được Trợ năng qua Shizuku: "+(output.isEmpty()?"không có phản hồi":output));
+            });
+        },"EnableMacroAccessibility").start();
     }
     private void saveHotkeys(){String id="";int pos=hotkeyMacro.getSelectedItemPosition();List<MacroStore.Macro> ms=MacroStore.all(this);if(pos>=0&&pos<ms.size())id=ms.get(pos).id;getSharedPreferences("hotkeys",MODE_PRIVATE).edit().putBoolean("enabled",hotkeyEnabled.isChecked()).putString("selected_id",id).apply();toast("Đã lưu: Volume Up = chạy 1 lần • Volume Down = STOP ALL (trừ khi đang ghi)");}
     private int loopValue(){int p=loops.getSelectedItemPosition();return p==0?1:p==1?5:p==2?10:0;}
