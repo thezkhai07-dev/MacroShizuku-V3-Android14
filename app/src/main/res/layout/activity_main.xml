@@ -16,6 +16,8 @@
             <Button android:id="@+id/shizuku" android:text="1. Cấp quyền Shizuku" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <Button android:id="@+id/overlay" android:text="2. Cấp quyền cửa sổ nổi" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <Button android:id="@+id/accessibility" android:text="3. Bật Accessibility" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/accessibilityShortcut" android:text="Hiện nút nổi Trợ năng" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <TextView android:text="Nút nổi có thể kéo; chạm để mở trang Trợ năng. Nút tự ẩn khi đóng app khỏi màn hình gần đây." android:textColor="#AFC0E2" android:textSize="11sp" android:paddingTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         </LinearLayout>
         <LinearLayout android:orientation="vertical" android:padding="14dp" android:layout_marginTop="12dp"
             android:background="@drawable/bg_panel" android:layout_width="match_parent" android:layout_height="wrap_content">
