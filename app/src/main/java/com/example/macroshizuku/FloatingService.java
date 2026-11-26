@@ -5,7 +5,7 @@ import android.app.*;import android.content.*;import android.graphics.Color;impo
 public class FloatingService extends Service {
     public static boolean isRunning=false;
     private WindowManager wm; private final List<View> views=new ArrayList<>(); private boolean collapsed=false;
-    private int buttonSize(){return getSharedPreferences("floating_style",MODE_PRIVATE).getInt("size",64);}
+    private int buttonSize(){return getSharedPreferences("floating_style",MODE_PRIVATE).getInt("size",72);}
     private int buttonAlpha(){return Math.max(0,Math.min(100,getSharedPreferences("floating_style",MODE_PRIVATE).getInt("alpha",85)));}
     @Override public void onCreate(){super.onCreate();isRunning=true;wm=(WindowManager)getSystemService(WINDOW_SERVICE);refresh();}
     private void refresh(){for(View v:views)try{wm.removeView(v);}catch(Exception ignored){}views.clear();int y=80;if(!collapsed){List<MacroStore.Macro> ms=MacroStore.all(this);for(MacroStore.Macro m:ms)if(m.floating){addMacro(m,y);y+=buttonSize()+8;}addStopAll(y);}addToggle(collapsed?80:y+64);}
@@ -15,13 +15,13 @@ public class FloatingService extends Service {
     private void addMacro(MacroStore.Macro m,int y){
         int size=buttonSize();
         TextView b=new TextView(this);
-        b.setText((Player.isRunning(m.id)?"■ ":"▶ ")+m.name);
+        b.setText(m.name);
         b.setTextColor(withAlpha(Color.WHITE,buttonAlpha()));
         b.setTextSize(10);b.setGravity(Gravity.CENTER);b.setMaxLines(3);
         b.setEllipsize(android.text.TextUtils.TruncateAt.END);b.setPadding(5,5,5,5);
         b.setBackground(circle(0xEE202F4A));
         b.setContentDescription((Player.isRunning(m.id)?"Dừng ":"Chạy ")+m.name);
-        b.setOnClickListener(v->{if(Player.isRunning(m.id))Player.stop(m.id);else Player.play(this,m);b.setText((Player.isRunning(m.id)?"■ ":"▶ ")+m.name);});
+        b.setOnClickListener(v->{if(Player.isRunning(m.id))Player.stop(m.id);else Player.play(this,m);b.setText(m.name);});
         makeDraggable(b);WindowManager.LayoutParams p=params(20,y);p.width=size;p.height=size;
         wm.addView(b,p);views.add(b);
     }
