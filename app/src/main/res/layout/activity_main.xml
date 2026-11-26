@@ -45,6 +45,7 @@
             <SeekBar android:id="@+id/floatSize" android:max="152" android:progress="24" android:progressTint="#42D9F5" android:thumbTint="#42D9F5" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <TextView android:id="@+id/floatAlphaText" android:text="Độ trong suốt: 85%" android:textColor="#F4F7FF" android:paddingTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <SeekBar android:id="@+id/floatAlpha" android:max="100" android:progress="85" android:progressTint="#42D9F5" android:thumbTint="#42D9F5" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/floatColor" android:text="🎨 Chọn màu nút macro" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <TextView android:text="Áp dụng cho nút macro nổi. Kích thước từ 48 đến 200 dp." android:textColor="#8292B2" android:textSize="11sp" android:paddingTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         </LinearLayout>
         <Button android:id="@+id/floatBtn" android:text="Hiện / làm mới nút nổi" android:layout_marginTop="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
