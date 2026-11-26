@@ -13,6 +13,21 @@ public class MainActivity extends Activity {
         findViewById(R.id.shizuku).setOnClickListener(v->{if(Shizuku.pingBinder()){try{if(Shizuku.checkSelfPermission()!=0)Shizuku.requestPermission(REQ);}catch(Exception ignored){}}else toast("Hãy mở Shizuku trước.");});
         findViewById(R.id.overlay).setOnClickListener(v->{if(!Settings.canDrawOverlays(this))startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:"+getPackageName())));else toast("Đã có quyền cửa sổ nổi.");});
         findViewById(R.id.accessibility).setOnClickListener(v->startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        Button accessibilityShortcut=findViewById(R.id.accessibilityShortcut);
+        accessibilityShortcut.setOnClickListener(v->{
+            if(AccessibilityShortcutService.isRunning){
+                stopService(new Intent(this,AccessibilityShortcutService.class));
+                accessibilityShortcut.setText("Hiện nút nổi Trợ năng");
+                toast("Đã ẩn nút nổi Trợ năng.");
+            }else if(!Settings.canDrawOverlays(this)){
+                startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));
+                toast("Hãy cấp quyền cửa sổ nổi rồi bật nút lại.");
+            }else{
+                startService(new Intent(this,AccessibilityShortcutService.class));
+                accessibilityShortcut.setText("Ẩn nút nổi Trợ năng");
+                toast("Đã hiện nút nổi Trợ năng.");
+            }
+        });
         speed.setProgress(100);speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){float x=Math.max(.25f,p/100f);speedText.setText(String.format(Locale.US,"Tốc độ %.2fx",x));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
         findViewById(R.id.record).setOnClickListener(v->{
             String macroName=name.getText().toString().trim();
@@ -109,6 +124,6 @@ public class MainActivity extends Activity {
     private void importData(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("application/json");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,IMPORT);}
     @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;try{if(r==EXPORT){OutputStream o=getContentResolver().openOutputStream(d.getData());o.write(MacroStore.exportJson(this).getBytes("UTF-8"));o.close();toast("Đã xuất backup.");}else{InputStream i=getContentResolver().openInputStream(d.getData());ByteArrayOutputStream b=new ByteArrayOutputStream();byte[] z=new byte[8192];int n;while((n=i.read(z))>0)b.write(z,0,n);i.close();MacroStore.importJson(this,b.toString("UTF-8"));refresh();toast("Đã nhập macro.");}}catch(Exception e){toast("Không thể xử lý file: "+e.getMessage());}}
     private void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
-    @Override protected void onResume(){super.onResume();refresh();}
+    @Override protected void onResume(){super.onResume();refresh();Button b=findViewById(R.id.accessibilityShortcut);if(b!=null)b.setText(AccessibilityShortcutService.isRunning?"Ẩn nút nổi Trợ năng":"Hiện nút nổi Trợ năng");}
     @Override protected void onDestroy(){Shizuku.removeRequestPermissionResultListener(permissionListener);super.onDestroy();}
 }
