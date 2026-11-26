@@ -2,6 +2,7 @@ package com.example.macroshizuku;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.view.KeyEvent;
+import android.os.SystemClock;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.WindowManager;
 import android.util.DisplayMetrics;
@@ -21,6 +22,10 @@ public class TouchRecordService extends AccessibilityService {
  private static volatile String captureError="";
  private static long lastActionTime=0;
  private static int screenW=0,screenH=0;
+ private volatile Object hotkeyProcess;
+ private volatile Thread hotkeyThread;
+ private static volatile long lastHotkeyDispatchMs=0;
+ private static volatile int lastHotkeyDispatchCode=0;
  private static Device touchDevice;
  private static class Device{String path;int minX,maxX,minY,maxY;Device(String p,int a,int b,int c,int d){path=p;minX=a;maxX=b;minY=c;maxY=d;}}
  public static void clear(){synchronized(actions){actions.clear();}}
@@ -35,11 +40,15 @@ public class TouchRecordService extends AccessibilityService {
   captureError="";
   // Keep the service configuration static. Vivo ROMs may restart or drop
   // accessibility services when their runtime configuration is rewritten.
-  // Key filtering is already declared in accessibility_service_config.xml.
+  // Key filtering is declared in XML. Also monitor input events through Shizuku
+  // as a fallback because some vendor ROMs do not forward volume keys to
+  // AccessibilityService.onKeyEvent(). This reader is passive and never injects touch.
+  startHotkeyMonitor();
  }
  @Override public boolean onUnbind(android.content.Intent intent){
   android.util.Log.w("TouchRecordService","Accessibility service unbound by system");
   endRecording();
+  stopHotkeyMonitor();
   if(instance==this)instance=null;
   return super.onUnbind(intent);
  }
@@ -77,25 +86,77 @@ public class TouchRecordService extends AccessibilityService {
  private static void save(int x1,int y1,int x2,int y2,long start,long end){long delay=lastActionTime==0?0:Math.max(0,start-lastActionTime),duration=Math.max(1,end-start);synchronized(actions){if(Math.hypot(x2-x1,y2-y1)<12)actions.add(new MacroStore.Action("tap",x1,y1,x1,y1,delay,duration));else actions.add(new MacroStore.Action("swipe",x1,y1,x2,y2,delay,Math.max(60,duration)));}lastActionTime=end;}
  private static void stopEventProcess(){recording=false;Object p=eventProcess;eventProcess=null;ShizukuShell.destroy(p);}
  public static List<MacroStore.Action> endRecording(){recording=false;stopEventProcess();Thread t=captureThread;if(t!=null)try{t.join(300);}catch(InterruptedException ignored){}List<MacroStore.Action> c=snapshot();pendingCapture=!c.isEmpty();return c;}
- @Override public void onDestroy(){endRecording();if(instance==this)instance=null;super.onDestroy();}
- @Override public boolean onKeyEvent(KeyEvent e){
-  int c=e.getKeyCode();
-  if(c!=KeyEvent.KEYCODE_VOLUME_UP&&c!=KeyEvent.KEYCODE_VOLUME_DOWN)return false;
-  SharedPreferences p=getSharedPreferences("hotkeys",MODE_PRIVATE);
-  boolean enabled=p.getBoolean("enabled",false);
-  android.util.Log.i("TouchRecordService","Volume key received: code="+c+", action="+e.getAction()+", repeat="+e.getRepeatCount()+", recording="+recording+", hotkeys="+enabled);
-  if(recording){
-   if(c==KeyEvent.KEYCODE_VOLUME_DOWN&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)endRecording();
-   return true;
-  }
-  if(!enabled)return false;
-  if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0){
-   if(c==KeyEvent.KEYCODE_VOLUME_UP)playSelectedOnce();
-   else Player.stopAll();
-  }
-  return true;
+ @Override public void onDestroy(){endRecording();stopHotkeyMonitor();if(instance==this)instance=null;super.onDestroy();}
+ private void startHotkeyMonitor(){
+  if(hotkeyThread!=null&&hotkeyThread.isAlive())return;
+  hotkeyThread=new Thread(()->{
+   while(instance==this&&!Thread.currentThread().isInterrupted()){
+    Object proc=null;
+    try{
+     SharedPreferences prefs=getSharedPreferences("hotkeys",MODE_PRIVATE);
+     if(!prefs.getBoolean("enabled",false)||!ShizukuShell.ready()){
+      Thread.sleep(1000);
+      continue;
+     }
+     // getevent -lt reads Linux input events without consuming or injecting them.
+     proc=ShizukuShell.start("getevent","-lt");
+     hotkeyProcess=proc;
+     try(BufferedReader reader=new BufferedReader(new InputStreamReader(ShizukuShell.stdout(proc),"UTF-8"))){
+      String line;
+      while(instance==this&&!Thread.currentThread().isInterrupted()&&(line=reader.readLine())!=null){
+       if(!line.contains("EV_KEY"))continue;
+       if(line.contains("KEY_VOLUMEUP")&&line.trim().endsWith("DOWN"))dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_UP,"Shizuku");
+       else if(line.contains("KEY_VOLUMEDOWN")&&line.trim().endsWith("DOWN"))dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_DOWN,"Shizuku");
+      }
+     }
+    }catch(InterruptedException e){Thread.currentThread().interrupt();}
+    catch(Exception e){android.util.Log.w("TouchRecordService","Shizuku volume monitor failed: "+e.getMessage());}
+    finally{if(hotkeyProcess==proc)hotkeyProcess=null;ShizukuShell.destroy(proc);}
+    if(instance==this&&!Thread.currentThread().isInterrupted())try{Thread.sleep(700);}catch(InterruptedException e){Thread.currentThread().interrupt();}
+   }
+  },"volume-hotkey-monitor");
+  hotkeyThread.setDaemon(true);
+  hotkeyThread.start();
  }
- private void playSelectedOnce(){String id=getSharedPreferences("hotkeys",MODE_PRIVATE).getString("selected_id","");if(id.isEmpty())return;MacroStore.Macro m=MacroStore.find(this,id);if(m==null||Player.isRunning(id))return;Player.playOnce(this,m);}
+ private void stopHotkeyMonitor(){
+  Thread t=hotkeyThread;hotkeyThread=null;
+  Object p=hotkeyProcess;hotkeyProcess=null;
+  ShizukuShell.destroy(p);
+  if(t!=null)t.interrupt();
+ }
+ private void dispatchVolumeHotkey(int code,String source){
+  long now=SystemClock.elapsedRealtime();
+  // Accessibility and getevent can report the same physical press. Debounce it.
+  synchronized(TouchRecordService.class){
+   if(code==lastHotkeyDispatchCode&&now-lastHotkeyDispatchMs<350)return;
+   lastHotkeyDispatchCode=code;lastHotkeyDispatchMs=now;
+  }
+  SharedPreferences prefs=getSharedPreferences("hotkeys",MODE_PRIVATE);
+  boolean enabled=prefs.getBoolean("enabled",false);
+  android.util.Log.i("TouchRecordService","Volume hotkey: code="+code+", source="+source+", recording="+recording+", enabled="+enabled);
+  if(recording){
+   if(code==KeyEvent.KEYCODE_VOLUME_DOWN)endRecording();
+   return;
+  }
+  if(!enabled)return;
+  if(code==KeyEvent.KEYCODE_VOLUME_UP)playSelectedOnce();
+  else if(code==KeyEvent.KEYCODE_VOLUME_DOWN)Player.stopAll();
+ }
+ @Override public boolean onKeyEvent(KeyEvent e){
+  int code=e.getKeyCode();
+  if(code!=KeyEvent.KEYCODE_VOLUME_UP&&code!=KeyEvent.KEYCODE_VOLUME_DOWN)return false;
+  if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)dispatchVolumeHotkey(code,"Accessibility");
+  SharedPreferences prefs=getSharedPreferences("hotkeys",MODE_PRIVATE);
+  return recording||prefs.getBoolean("enabled",false);
+ }
+ private void playSelectedOnce(){
+  String id=getSharedPreferences("hotkeys",MODE_PRIVATE).getString("selected_id","");
+  if(id.isEmpty()){android.util.Log.w("TouchRecordService","Volume Up ignored: no selected macro id");return;}
+  MacroStore.Macro m=MacroStore.find(this,id);
+  if(m==null){android.util.Log.w("TouchRecordService","Volume Up ignored: selected macro not found: "+id);return;}
+  if(Player.isRunning(id))return;
+  Player.playOnce(this,m);
+ }
  @Override public void onAccessibilityEvent(AccessibilityEvent e){}
  @Override public void onInterrupt(){}
 }
