@@ -92,20 +92,21 @@ public class TouchRecordService extends AccessibilityService {
   return v.equals("DOWN")||v.equals("1")||v.equals("00000001");
  }
  private static void readEvents(Object proc,Device d){
-  boolean down=false,tracking=false;
+  boolean down=false;
   int rx=0,ry=0,x1=0,y1=0,x2=0,y2=0;
   long start=0;
+  long eventCount=0;
   try(BufferedReader r=new BufferedReader(new InputStreamReader(ShizukuShell.stdout(proc),"UTF-8"))){
    String line;
    while(recording&&(line=r.readLine())!=null){
+    eventCount++;
     String[] a=line.trim().split("\\s+");
     if(a.length<4)continue;
     String code=a[a.length-2],val=a[a.length-1];
     long now=timeMs(line);
-    if(code.equals("ABS_MT_POSITION_X"))rx=hex(val);
-    else if(code.equals("ABS_MT_POSITION_Y"))ry=hex(val);
+    if(code.equals("ABS_MT_POSITION_X")||code.equals("ABS_X"))rx=hex(val);
+    else if(code.equals("ABS_MT_POSITION_Y")||code.equals("ABS_Y"))ry=hex(val);
     else if(code.equals("ABS_MT_TRACKING_ID")){
-     tracking=true;
      int id=hex(val);
      if(id!=-1&&!down){
       down=true;start=now;
@@ -116,7 +117,7 @@ public class TouchRecordService extends AccessibilityService {
       y2=scale(ry,d.minY,d.maxY,screenH);
       save(x1,y1,x2,y2,start,now);down=false;
      }
-    }else if(code.equals("BTN_TOUCH")&&!tracking){
+    }else if(code.equals("BTN_TOUCH")||code.equals("BTN_LEFT")){
      boolean pressed=touchPressed(val);
      if(pressed&&!down){
       down=true;start=now;
@@ -128,7 +129,7 @@ public class TouchRecordService extends AccessibilityService {
       save(x1,y1,x2,y2,start,now);down=false;
      }
     }
-    if(down&&(code.equals("ABS_MT_POSITION_X")||code.equals("ABS_MT_POSITION_Y"))){
+    if(down&&(code.equals("ABS_MT_POSITION_X")||code.equals("ABS_MT_POSITION_Y")||code.equals("ABS_X")||code.equals("ABS_Y"))){
      x2=scale(rx,d.minX,d.maxX,screenW);
      y2=scale(ry,d.minY,d.maxY,screenH);
     }
@@ -137,6 +138,7 @@ public class TouchRecordService extends AccessibilityService {
    if(recording)captureError=e.getMessage()==null?"Lỗi đọc cảm ứng":e.getMessage();
    android.util.Log.e("TouchRecordService","Touch event reader failed",e);
   }finally{
+   android.util.Log.i("TouchRecordService","Touch reader ended: events="+eventCount+", actions="+snapshot().size()+", device="+d.path);
    if(recording){
     recording=false;
     pendingCapture=!snapshot().isEmpty();
@@ -146,7 +148,18 @@ public class TouchRecordService extends AccessibilityService {
  }
  private static void save(int x1,int y1,int x2,int y2,long start,long end){long delay=lastActionTime==0?0:Math.max(0,start-lastActionTime),duration=Math.max(1,end-start);synchronized(actions){if(Math.hypot(x2-x1,y2-y1)<12)actions.add(new MacroStore.Action("tap",x1,y1,x1,y1,delay,duration));else actions.add(new MacroStore.Action("swipe",x1,y1,x2,y2,delay,Math.max(60,duration)));}lastActionTime=end;}
  private static void stopEventProcess(){recording=false;Object p=eventProcess;eventProcess=null;ShizukuShell.destroy(p);}
- public static List<MacroStore.Action> endRecording(){recording=false;stopEventProcess();Thread t=captureThread;if(t!=null)try{t.join(300);}catch(InterruptedException ignored){}List<MacroStore.Action> c=snapshot();pendingCapture=!c.isEmpty();return c;}
+ public static List<MacroStore.Action> endRecording(){
+  // Give the reader a short chance to consume already-buffered release events
+  // before closing getevent; then commit a still-held touch as one final action.
+  Thread t=captureThread;
+  try{if(t!=null)t.join(180);}catch(InterruptedException ignored){Thread.currentThread().interrupt();}
+  recording=false;
+  stopEventProcess();
+  try{if(t!=null)t.join(350);}catch(InterruptedException ignored){Thread.currentThread().interrupt();}
+  List<MacroStore.Action> c=snapshot();
+  pendingCapture=!c.isEmpty();
+  return c;
+ }
  @Override public void onDestroy(){endRecording();stopHotkeyMonitor();if(instance==this)instance=null;super.onDestroy();}
  private void startHotkeyMonitor(){
   if(hotkeyThread!=null&&hotkeyThread.isAlive())return;
