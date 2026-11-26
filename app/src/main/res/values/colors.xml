@@ -1,1 +1,8 @@
-<resources><color name="purple_700">#6750A4</color><color name="purple_500">#7E57C2</color></resources>
+<resources>
+    <color name="purple_700">#6750A4</color>
+    <color name="purple_500">#42D9F5</color>
+    <color name="navy_950">#0B1020</color>
+    <color name="navy_800">#172238</color>
+    <color name="cyan_400">#42D9F5</color>
+    <color name="violet_400">#9B7BFF</color>
+</resources>
