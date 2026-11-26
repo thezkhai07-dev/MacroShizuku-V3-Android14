@@ -29,7 +29,7 @@ public class TouchRecordService extends AccessibilityService {
  public static boolean hasPendingCapture(){return pendingCapture;}
  public static String getCaptureError(){return captureError;}
  public static void clearPendingCapture(){pendingCapture=false;synchronized(actions){actions.clear();}}
- @Override public void onServiceConnected(){super.onServiceConnected();instance=this;AccessibilityServiceInfo i=getServiceInfo();i.flags|=AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;if(android.os.Build.VERSION.SDK_INT>=34)i.setMotionEventSources(0);setServiceInfo(i);}
+ @Override public void onServiceConnected(){super.onServiceConnected();instance=this;captureError="";}
  private static Device findTouchDevice(String listing){
   String[] blocks=listing.split("(?=add device\\s+\\d+:)");
   Pattern pp=Pattern.compile("(/dev/input/event\\d+)"),px=Pattern.compile("ABS_MT_POSITION_X.*?min\\s+(-?\\d+),\\s*max\\s+(-?\\d+)"),py=Pattern.compile("ABS_MT_POSITION_Y.*?min\\s+(-?\\d+),\\s*max\\s+(-?\\d+)");
