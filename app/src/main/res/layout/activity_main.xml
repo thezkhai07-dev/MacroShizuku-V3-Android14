@@ -38,6 +38,15 @@
                 <Button android:id="@+id/stop" android:text="■ LƯU" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
             </LinearLayout>
         </LinearLayout>
+        <LinearLayout android:orientation="vertical" android:padding="14dp" android:layout_marginTop="12dp"
+            android:background="@drawable/bg_panel" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <TextView android:text="TÙY CHỈNH NÚT NỔI" android:textColor="#AFC0E2" android:textStyle="bold" android:textSize="13sp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/floatSizeText" android:text="Kích thước: 64 dp" android:textColor="#F4F7FF" android:paddingTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <SeekBar android:id="@+id/floatSize" android:max="40" android:progress="16" android:progressTint="#42D9F5" android:thumbTint="#42D9F5" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/floatAlphaText" android:text="Độ trong suốt: 85%" android:textColor="#F4F7FF" android:paddingTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <SeekBar android:id="@+id/floatAlpha" android:max="100" android:progress="85" android:progressTint="#42D9F5" android:thumbTint="#42D9F5" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <TextView android:text="Áp dụng cho nút macro hình tròn và nút STOP ALL nổi." android:textColor="#8292B2" android:textSize="11sp" android:paddingTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        </LinearLayout>
         <Button android:id="@+id/floatBtn" android:text="Hiện / làm mới nút nổi" android:layout_marginTop="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
             <Button android:id="@+id/exportBtn" android:text="Xuất backup" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
