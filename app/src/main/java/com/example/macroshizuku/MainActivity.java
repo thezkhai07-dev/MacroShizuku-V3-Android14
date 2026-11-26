@@ -12,7 +12,10 @@ public class MainActivity extends Activity {
         hotkeyEnabled.setChecked(getSharedPreferences("hotkeys",MODE_PRIVATE).getBoolean("enabled",false));
         findViewById(R.id.shizuku).setOnClickListener(v->{if(Shizuku.pingBinder()){try{if(Shizuku.checkSelfPermission()!=0)Shizuku.requestPermission(REQ);}catch(Exception ignored){}}else toast("Hãy mở Shizuku trước.");});
         findViewById(R.id.overlay).setOnClickListener(v->{if(!Settings.canDrawOverlays(this))startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:"+getPackageName())));else toast("Đã có quyền cửa sổ nổi.");});
-        findViewById(R.id.accessibility).setOnClickListener(v->{\n            try{startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));}\n            catch(Exception e){toast("Không mở được cài đặt Trợ năng: "+e.getMessage());}\n        });
+        findViewById(R.id.accessibility).setOnClickListener(v->{
+            try{startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));}
+            catch(Exception e){toast("Không mở được cài đặt Trợ năng: "+e.getMessage());}
+        });
         speed.setProgress(100);speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){float x=Math.max(.25f,p/100f);speedText.setText(String.format(Locale.US,"Tốc độ %.2fx",x));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
         findViewById(R.id.record).setOnClickListener(v->{
             String macroName=name.getText().toString().trim();
