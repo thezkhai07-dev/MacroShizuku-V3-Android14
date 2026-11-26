@@ -5,14 +5,14 @@ import android.app.*;import android.content.*;import android.net.Uri;import andr
 public class MainActivity extends Activity {
     LinearLayout list; EditText name; SeekBar speed; TextView speedText; Spinner loops, hotkeyMacro; CheckBox hotkeyEnabled; static final int REQ=77, EXPORT=91, IMPORT=92;
     private final Shizuku.OnRequestPermissionResultListener permissionListener=(requestCode,grantResult)->runOnUiThread(()->{
-        if(requestCode==REQ){if(grantResult==0){toast("Đã cấp quyền Shizuku.");enableAccessibilityWithShizuku();}else toast("Bạn chưa cấp quyền Shizuku.");}
+        if(requestCode==REQ){if(grantResult==0)toast("Đã cấp quyền Shizuku.");else toast("Bạn chưa cấp quyền Shizuku.");}
     });
     @Override public void onCreate(Bundle b){super.onCreate(b);Shizuku.addRequestPermissionResultListener(permissionListener);setContentView(R.layout.activity_main);
         list=findViewById(R.id.macroList);name=findViewById(R.id.name);speed=findViewById(R.id.speed);speedText=findViewById(R.id.speedText);loops=findViewById(R.id.loops);hotkeyMacro=findViewById(R.id.hotkeyMacro);hotkeyEnabled=findViewById(R.id.hotkeyEnabled);
         hotkeyEnabled.setChecked(getSharedPreferences("hotkeys",MODE_PRIVATE).getBoolean("enabled",false));
         findViewById(R.id.shizuku).setOnClickListener(v->{if(Shizuku.pingBinder()){try{if(Shizuku.checkSelfPermission()!=0)Shizuku.requestPermission(REQ);}catch(Exception ignored){}}else toast("Hãy mở Shizuku trước.");});
         findViewById(R.id.overlay).setOnClickListener(v->{if(!Settings.canDrawOverlays(this))startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:"+getPackageName())));else toast("Đã có quyền cửa sổ nổi.");});
-        findViewById(R.id.accessibility).setOnClickListener(v->enableAccessibilityWithShizuku());
+        findViewById(R.id.accessibility).setOnClickListener(v->{\n            try{startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));}\n            catch(Exception e){toast("Không mở được cài đặt Trợ năng: "+e.getMessage());}\n        });
         speed.setProgress(100);speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){float x=Math.max(.25f,p/100f);speedText.setText(String.format(Locale.US,"Tốc độ %.2fx",x));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
         findViewById(R.id.record).setOnClickListener(v->{
             String macroName=name.getText().toString().trim();
@@ -65,52 +65,6 @@ public class MainActivity extends Activity {
         findViewById(R.id.saveHotkey).setOnClickListener(v->saveHotkeys());
         findViewById(R.id.exportBtn).setOnClickListener(v->exportData()); findViewById(R.id.importBtn).setOnClickListener(v->importData());
         refresh();
-    }
-    private void enableAccessibilityWithShizuku(){
-        if(!Shizuku.pingBinder()){
-            toast("Hãy khởi động Shizuku Next rồi nhấn nút này lần nữa.");
-            return;
-        }
-        if(!ShizukuShell.ready()){
-            try{Shizuku.requestPermission(REQ);toast("Hãy cấp quyền Shizuku cho Macro Shizuku; cấp xong app sẽ tự tiếp tục.");}
-            catch(Throwable e){toast("Không yêu cầu được quyền Shizuku: "+e.getMessage());}
-            return;
-        }
-        toast("Đang bật Trợ năng Macro Shizuku...");
-        new Thread(()->{
-            String component=getPackageName()+"/"+TouchRecordService.class.getName();
-            String result="";
-            try{
-                String current=ShizukuShell.run("settings","get","secure","enabled_accessibility_services").trim();
-                if(current.equals("null"))current="";
-                boolean exists=false;
-                for(String item:current.split(":")){
-                    if(item.trim().equals(component)){exists=true;break;}
-                }
-                String updated=exists?current:(current.isEmpty()?component:current+":"+component);
-                ShizukuShell.run("settings","put","secure","enabled_accessibility_services",updated);
-                String verify=ShizukuShell.run("settings","get","secure","enabled_accessibility_services").trim();
-                boolean serviceSaved=false;
-                for(String item:verify.split(":")){
-                    if(item.trim().equals(component)){serviceSaved=true;break;}
-                }
-                if(!serviceSaved){
-                    result="SERVICE_WRITE_FAILED; readback="+verify;
-                }else{
-                    ShizukuShell.run("settings","put","secure","accessibility_enabled","1");
-                    String master=ShizukuShell.run("settings","get","secure","accessibility_enabled").trim();
-                    if(!"1".equals(master))result="MASTER_SWITCH_FAILED; value="+master;
-                    else result="MACRO_A11Y_ENABLED";
-                }
-            }catch(Throwable e){result="ERROR: "+e.getClass().getSimpleName()+": "+e.getMessage();}
-            final String output=result;
-            runOnUiThread(()->{
-                if(output.equals("MACRO_A11Y_ENABLED"))toast("Đã gửi yêu cầu bật Trợ năng. Đang chờ Android kết nối dịch vụ.");
-                else if(output.startsWith("SERVICE_WRITE_FAILED"))toast("Android/Vivo từ chối lưu dịch vụ Trợ năng: "+output);
-                else if(output.startsWith("MASTER_SWITCH_FAILED"))toast("Android chưa bật công tắc Trợ năng: "+output);
-                else toast("Không bật được Trợ năng qua Shizuku: "+output);
-            });
-        },"EnableMacroAccessibility").start();
     }
     private void saveHotkeys(){String id="";int pos=hotkeyMacro.getSelectedItemPosition();List<MacroStore.Macro> ms=MacroStore.all(this);if(pos>=0&&pos<ms.size())id=ms.get(pos).id;getSharedPreferences("hotkeys",MODE_PRIVATE).edit().putBoolean("enabled",hotkeyEnabled.isChecked()).putString("selected_id",id).apply();toast("Đã lưu: Volume Up = chạy 1 lần • Volume Down = STOP ALL (trừ khi đang ghi)");}
     private int loopValue(){int p=loops.getSelectedItemPosition();return p==0?1:p==1?5:p==2?10:0;}
