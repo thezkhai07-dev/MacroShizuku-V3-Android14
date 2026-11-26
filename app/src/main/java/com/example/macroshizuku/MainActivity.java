@@ -54,8 +54,8 @@ public class MainActivity extends Activity {
         TextView floatWidthText=findViewById(R.id.floatWidthText);
         TextView floatAlphaText=findViewById(R.id.floatAlphaText);
         android.content.SharedPreferences floatPrefs=getSharedPreferences("floating_style",MODE_PRIVATE);
-        floatSize.setProgress(Math.max(0,Math.min(152,floatPrefs.getInt("size",72)-48)));
-        floatWidth.setProgress(Math.max(0,Math.min(252,floatPrefs.getInt("width",floatSize.getProgress()+48)-48)));
+        floatSize.setProgress(Math.max(0,Math.min(352,floatPrefs.getInt("size",72)-48)));
+        floatWidth.setProgress(Math.max(0,Math.min(352,floatPrefs.getInt("width",floatSize.getProgress()+48)-48)));
         floatAlpha.setProgress(floatPrefs.getInt("alpha",85));
         floatSizeText.setText("Chiều cao: "+(floatSize.getProgress()+48)+" dp");
         floatWidthText.setText("Chiều rộng: "+(floatWidth.getProgress()+48)+" dp");
@@ -68,7 +68,7 @@ public class MainActivity extends Activity {
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){
-                floatPrefs.edit().putInt("size",Math.min(200,floatSize.getProgress()+48)).putInt("width",Math.min(300,floatWidth.getProgress()+48)).putInt("alpha",floatAlpha.getProgress()).apply();
+                floatPrefs.edit().putInt("size",Math.min(400,floatSize.getProgress()+48)).putInt("width",Math.min(400,floatWidth.getProgress()+48)).putInt("alpha",floatAlpha.getProgress()).apply();
                 if(FloatingService.isRunning && Settings.canDrawOverlays(MainActivity.this))
                     startService(new Intent(MainActivity.this,FloatingService.class).setAction("REFRESH"));
             }
