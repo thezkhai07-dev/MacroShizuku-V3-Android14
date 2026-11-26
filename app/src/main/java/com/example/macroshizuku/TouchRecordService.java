@@ -16,7 +16,9 @@ public class TouchRecordService extends AccessibilityService {
     private static volatile TouchRecordService instance;
     private static volatile boolean pendingCapture=false;
     private static final List<MacroStore.Action> actions=new ArrayList<>();
-    private long downTime=0,lastActionTime=0; private float downX,downY; private boolean down=false;
+    private long downTime=0,lastActionTime=0;
+    private float downX,downY;
+    private boolean down=false;
 
     public static void clear(){synchronized(actions){actions.clear();}}
     public static List<MacroStore.Action> snapshot(){synchronized(actions){return new ArrayList<>(actions);}}
@@ -42,7 +44,7 @@ public class TouchRecordService extends AccessibilityService {
         pendingCapture=false;
         s.lastActionTime=0;
         AccessibilityServiceInfo info=s.getServiceInfo();
-        info.setMotionEventSources(MotionEvent.SOURCE_TOUCHSCREEN);
+        info.setMotionEventSources(android.view.InputDevice.SOURCE_TOUCHSCREEN);
         s.setServiceInfo(info);
         recording=true;
         return true;
@@ -99,7 +101,8 @@ public class TouchRecordService extends AccessibilityService {
 
     @Override public void onMotionEvent(MotionEvent e){
         if(!recording || Build.VERSION.SDK_INT<34) return;
-        int action=e.getActionMasked(); long now=e.getEventTime();
+        int action=e.getActionMasked();
+        long now=e.getEventTime();
         if(action==MotionEvent.ACTION_DOWN){
             downX=e.getX();downY=e.getY();down=true;downTime=now;
         } else if(down && action==MotionEvent.ACTION_UP){
@@ -107,14 +110,18 @@ public class TouchRecordService extends AccessibilityService {
             long delay=lastActionTime==0?0:Math.max(0,downTime-lastActionTime);
             long duration=Math.max(1,now-downTime);
             synchronized(actions){
-                if(Math.hypot(x-downX,y-downY)<12){actions.add(new MacroStore.Action("tap",downX,downY,downX,downY,delay,duration));}
-                else {actions.add(new MacroStore.Action("swipe",downX,downY,x,y,delay,Math.max(60,duration)));}
+                if(Math.hypot(x-downX,y-downY)<12){
+                    actions.add(new MacroStore.Action("tap",downX,downY,downX,downY,delay,duration));
+                } else {
+                    actions.add(new MacroStore.Action("swipe",downX,downY,x,y,delay,Math.max(60,duration)));
+                }
             }
             down=false;lastActionTime=now;
         } else if(action==MotionEvent.ACTION_CANCEL){
             down=false;
         }
     }
+
     @Override public void onAccessibilityEvent(AccessibilityEvent event){}
     @Override public void onInterrupt(){}
 }
