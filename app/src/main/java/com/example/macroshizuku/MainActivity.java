@@ -37,6 +37,30 @@ public class MainActivity extends Activity {
             MacroStore.add(this,m);TouchRecordService.clearPendingCapture();toast("Đã lưu "+n+" • "+m.actions.size()+" thao tác");refresh();
         });
         findViewById(R.id.floatBtn).setOnClickListener(v->{if(!Settings.canDrawOverlays(this)){toast("Hãy cấp quyền cửa sổ nổi.");return;}startService(new Intent(this,FloatingService.class));});
+        SeekBar floatSize=findViewById(R.id.floatSize);
+        SeekBar floatAlpha=findViewById(R.id.floatAlpha);
+        TextView floatSizeText=findViewById(R.id.floatSizeText);
+        TextView floatAlphaText=findViewById(R.id.floatAlphaText);
+        android.content.SharedPreferences floatPrefs=getSharedPreferences("floating_style",MODE_PRIVATE);
+        floatSize.setProgress(floatPrefs.getInt("size",64)-48);
+        floatAlpha.setProgress(floatPrefs.getInt("alpha",85));
+        floatSizeText.setText("Kích thước: "+(floatSize.getProgress()+48)+" dp");
+        floatAlphaText.setText("Độ trong suốt: "+floatAlpha.getProgress()+"%");
+        SeekBar.OnSeekBarChangeListener styleListener=new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
+                floatSizeText.setText("Kích thước: "+(floatSize.getProgress()+48)+" dp");
+                floatAlphaText.setText("Độ trong suốt: "+floatAlpha.getProgress()+"%");
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){
+                floatPrefs.edit().putInt("size",floatSize.getProgress()+48).putInt("alpha",floatAlpha.getProgress()).apply();
+                if(FloatingService.isRunning && Settings.canDrawOverlays(MainActivity.this))
+                    startService(new Intent(MainActivity.this,FloatingService.class).setAction("REFRESH"));
+            }
+        };
+        floatSize.setOnSeekBarChangeListener(styleListener);
+        floatAlpha.setOnSeekBarChangeListener(styleListener);
+
         findViewById(R.id.stopAll).setOnClickListener(v->Player.stopAll());
         findViewById(R.id.saveHotkey).setOnClickListener(v->saveHotkeys());
         findViewById(R.id.exportBtn).setOnClickListener(v->exportData()); findViewById(R.id.importBtn).setOnClickListener(v->importData());
