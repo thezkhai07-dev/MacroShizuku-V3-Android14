@@ -132,8 +132,29 @@ public class MainActivity extends Activity {
     }
     private Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(12);b.setMinWidth(0);b.setPadding(3,0,3,0);b.setAllCaps(false);return b;}
     private LinearLayout buttonRow(Button... items){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);for(Button b:items){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f);p.setMargins(3,2,3,2);row.addView(b,p);}return row;}
-    private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.floating=m.floating;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
-    private void editMacro(MacroStore.Macro m){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(30,10,30,10);EditText n=new EditText(this);n.setText(m.name);box.addView(n);SeekBar s=new SeekBar(this);s.setMax(400);s.setProgress(Math.round(m.speed*100));box.addView(s);Spinner l=new Spinner(this);l.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"1 lần","5 lần","10 lần","Vô hạn"}));l.setSelection(m.loops==1?0:m.loops==5?1:m.loops==10?2:3);box.addView(l);CheckBox f=new CheckBox(this);f.setText("Hiện nút nổi cho macro này");f.setChecked(m.floating);box.addView(f);new AlertDialog.Builder(this).setTitle("Sửa macro").setView(box).setPositiveButton("Lưu",(d,w)->{m.name=n.getText().toString().trim();m.speed=Math.max(.25f,s.getProgress()/100f);m.loops=l.getSelectedItemPosition()==0?1:l.getSelectedItemPosition()==1?5:l.getSelectedItemPosition()==2?10:0;m.floating=f.isChecked();MacroStore.upsert(this,m);if(Settings.canDrawOverlays(this))startService(new Intent(this,FloatingService.class).setAction("REFRESH"));refresh();}).setNegativeButton("Hủy",null).show();}
+    private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.floating=m.floating;c.buttonWidth=m.buttonWidth;c.buttonHeight=m.buttonHeight;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
+    private void editMacro(MacroStore.Macro m){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(30,10,30,10);
+        EditText n=new EditText(this);n.setText(m.name);box.addView(n);
+        SeekBar s=new SeekBar(this);s.setMax(400);s.setProgress(Math.round(m.speed*100));box.addView(s);
+        Spinner l=new Spinner(this);l.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"1 lần","5 lần","10 lần","Vô hạn"}));l.setSelection(m.loops==1?0:m.loops==5?1:m.loops==10?2:3);box.addView(l);
+        CheckBox f=new CheckBox(this);f.setText("Hiện nút nổi cho macro này");f.setChecked(m.floating);box.addView(f);
+        TextView widthLabel=new TextView(this);widthLabel.setTextColor(0xFFF4F7FF);box.addView(widthLabel);
+        SeekBar widthBar=new SeekBar(this);widthBar.setMax(352);widthBar.setProgress(Math.max(0,(m.buttonWidth>0?m.buttonWidth:getSharedPreferences("floating_style",MODE_PRIVATE).getInt("width",72))-48));box.addView(widthBar);
+        TextView heightLabel=new TextView(this);heightLabel.setTextColor(0xFFF4F7FF);box.addView(heightLabel);
+        SeekBar heightBar=new SeekBar(this);heightBar.setMax(352);heightBar.setProgress(Math.max(0,(m.buttonHeight>0?m.buttonHeight:getSharedPreferences("floating_style",MODE_PRIVATE).getInt("size",72))-48));box.addView(heightBar);
+        Runnable updateDimensions=()->{widthLabel.setText("Chiều rộng riêng: "+(widthBar.getProgress()+48)+" dp");heightLabel.setText("Chiều cao riêng: "+(heightBar.getProgress()+48)+" dp");};
+        widthBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){updateDimensions.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
+        heightBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){updateDimensions.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
+        updateDimensions.run();
+        TextView hint=new TextView(this);hint.setText("Kích thước được lưu riêng cho macro này (48–400 dp).");hint.setTextColor(0xFF8292B2);box.addView(hint);
+        new AlertDialog.Builder(this).setTitle("Sửa macro").setView(box).setPositiveButton("Lưu",(d,w)->{
+            m.name=n.getText().toString().trim();m.speed=Math.max(.25f,s.getProgress()/100f);
+            m.loops=l.getSelectedItemPosition()==0?1:l.getSelectedItemPosition()==1?5:l.getSelectedItemPosition()==2?10:0;
+            m.floating=f.isChecked();m.buttonWidth=widthBar.getProgress()+48;m.buttonHeight=heightBar.getProgress()+48;
+            MacroStore.upsert(this,m);if(Settings.canDrawOverlays(this))startService(new Intent(this,FloatingService.class).setAction("REFRESH"));refresh();
+        }).setNegativeButton("Hủy",null).show();
+    }
     private void exportData(){Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.setType("application/json");i.putExtra(Intent.EXTRA_TITLE,"macroshizuku-v3-backup.json");startActivityForResult(i,EXPORT);}
     private void importData(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("application/json");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,IMPORT);}
     @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;try{if(r==EXPORT){OutputStream o=getContentResolver().openOutputStream(d.getData());o.write(MacroStore.exportJson(this).getBytes("UTF-8"));o.close();toast("Đã xuất backup.");}else{InputStream i=getContentResolver().openInputStream(d.getData());ByteArrayOutputStream b=new ByteArrayOutputStream();byte[] z=new byte[8192];int n;while((n=i.read(z))>0)b.write(z,0,n);i.close();MacroStore.importJson(this,b.toString("UTF-8"));refresh();toast("Đã nhập macro.");}}catch(Exception e){toast("Không thể xử lý file: "+e.getMessage());}}
