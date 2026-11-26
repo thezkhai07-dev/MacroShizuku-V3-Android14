@@ -67,35 +67,22 @@ public class MainActivity extends Activity {
         refresh();
     }
     private void enableAccessibilityWithShizuku(){
-        if(!Shizuku.pingBinder()){toast("Hãy khởi động Shizuku Next trước.");return;}
         try{
-            if(Shizuku.checkSelfPermission()!=android.content.pm.PackageManager.PERMISSION_GRANTED){
-                Shizuku.requestPermission(REQ);
-                toast("Hãy cấp quyền Shizuku rồi nhấn nút bật lại.");
+            android.content.ComponentName service=new android.content.ComponentName(this,TouchRecordService.class);
+            Intent detail=new Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS");
+            detail.putExtra("android.intent.extra.COMPONENT_NAME",service);
+            detail.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if(detail.resolveActivity(getPackageManager())!=null){
+                startActivity(detail);
                 return;
             }
-            String component=getPackageName()+"/"+TouchRecordService.class.getName();
-            String current=ShizukuShell.run("settings","get","secure","enabled_accessibility_services");
-            if(current.startsWith("ERR:"))throw new Exception(current);
-            if(!current.contains(component)){
-                String updated=current.isEmpty()||"null".equals(current)?component:current+":"+component;
-                String result=ShizukuShell.run("settings","put","secure","enabled_accessibility_services",updated);
-                if(result.startsWith("ERR:"))throw new Exception(result);
-            }
-            ShizukuShell.run("settings","put","secure","accessibility_enabled","1");
-            String verifyList=ShizukuShell.run("settings","get","secure","enabled_accessibility_services");
-            String verifyEnabled=ShizukuShell.run("settings","get","secure","accessibility_enabled");
-            if(!verifyList.contains(component)||!"1".equals(verifyEnabled.trim())){
-                String fixedList=verifyList.contains(component)?verifyList:(verifyList.isEmpty()||"null".equals(verifyList)?component:verifyList+":"+component);
-                ShizukuShell.run("settings","put","secure","enabled_accessibility_services",fixedList);
-                ShizukuShell.run("settings","put","secure","accessibility_enabled","1");
-                verifyList=ShizukuShell.run("settings","get","secure","enabled_accessibility_services");
-                verifyEnabled=ShizukuShell.run("settings","get","secure","accessibility_enabled");
-            }
-            if(verifyList.contains(component)&&"1".equals(verifyEnabled.trim()))
-                toast("Đã bật Accessibility cho Macro Shizuku.");
-            else toast("Chưa bật được. Hãy kiểm tra Shizuku Next còn hoạt động và cấp quyền cho app.");
-        }catch(Throwable e){toast("Lỗi khi bật Trợ năng: "+e.getMessage());}
+        }catch(Throwable ignored){}
+        try{
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            toast("Hãy chọn Macro Shizuku V3 rồi bật Cho phép.");
+        }catch(Throwable e){
+            toast("Không mở được cài đặt Trợ năng: "+e.getMessage());
+        }
     }
     private void saveHotkeys(){String id="";int pos=hotkeyMacro.getSelectedItemPosition();List<MacroStore.Macro> ms=MacroStore.all(this);if(pos>=0&&pos<ms.size())id=ms.get(pos).id;getSharedPreferences("hotkeys",MODE_PRIVATE).edit().putBoolean("enabled",hotkeyEnabled.isChecked()).putString("selected_id",id).apply();toast("Đã lưu: Volume Up = chạy 1 lần • Volume Down = STOP ALL (trừ khi đang ghi)");}
     private int loopValue(){int p=loops.getSelectedItemPosition();return p==0?1:p==1?5:p==2?10:0;}
