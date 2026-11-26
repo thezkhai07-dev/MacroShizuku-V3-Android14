@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
             m.speed=Math.max(.25f,speed.getProgress()/100f);m.loops=loopValue();m.actions=captured;m.floating=true;
             MacroStore.add(this,m);TouchRecordService.clearPendingCapture();toast("Đã lưu "+n+" • "+m.actions.size()+" thao tác");refresh();
         });
-        findViewById(R.id.floatBtn).setOnClickListener(v->{if(!Settings.canDrawOverlays(this)){toast("Hãy cấp quyền cửa sổ nổi.");return;}startService(new Intent(this,FloatingService.class));});
+        findViewById(R.id.floatBtn).setOnClickListener(v->{if(!Settings.canDrawOverlays(this)){startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));return;}startService(new Intent(this,FloatingService.class));});
         SeekBar floatSize=findViewById(R.id.floatSize);
         SeekBar floatAlpha=findViewById(R.id.floatAlpha);
         TextView floatSizeText=findViewById(R.id.floatSizeText);
