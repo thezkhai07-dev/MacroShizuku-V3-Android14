@@ -6,8 +6,8 @@ public class FloatingService extends Service {
     public static boolean isRunning=false;
     private WindowManager wm; private final List<View> views=new ArrayList<>(); private boolean collapsed=false;
     private android.content.SharedPreferences prefs(){return getSharedPreferences("floating_style",MODE_PRIVATE);}
-    private int buttonSize(){return Math.max(48,Math.min(200,prefs().getInt("size",72)));}
-    private int buttonWidth(){return Math.max(48,Math.min(300,prefs().getInt("width",buttonSize())));}
+    private int buttonSize(){return Math.max(48,Math.min(400,prefs().getInt("size",72)));}
+    private int buttonWidth(){return Math.max(48,Math.min(400,prefs().getInt("width",buttonSize())));}
     private int buttonAlpha(){return Math.max(0,Math.min(100,prefs().getInt("alpha",85)));}
     private int buttonColor(){return prefs().getInt("color",0xFF202F4A);}
     private boolean locked(){return prefs().getBoolean("locked",false);}
