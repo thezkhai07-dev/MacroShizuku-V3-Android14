@@ -40,6 +40,13 @@ public class MainActivity extends Activity {
         findViewById(R.id.stop).setOnClickListener(v->{
             if(!TouchRecordService.recording && !TouchRecordService.hasPendingCapture()){toast("Chưa có bản ghi để lưu.");return;}
             List<MacroStore.Action> captured=TouchRecordService.endRecording();
+            if(captured==null||captured.isEmpty()){
+                String detail=TouchRecordService.getCaptureError();
+                toast(detail==null||detail.trim().isEmpty()
+                    ?"Không có thao tác nào được ghi. Macro trống không được lưu. Hãy kiểm tra quyền Shizuku và thử lại."
+                    :detail+" Macro trống không được lưu.");
+                return;
+            }
             String n=String.valueOf(name.getTag());
             if(n.equals("null")||n.trim().isEmpty())n="Macro "+(MacroStore.all(this).size()+1);
             MacroStore.Macro m=new MacroStore.Macro("m"+System.currentTimeMillis(),n);
