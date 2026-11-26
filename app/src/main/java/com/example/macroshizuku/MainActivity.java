@@ -12,22 +12,7 @@ public class MainActivity extends Activity {
         hotkeyEnabled.setChecked(getSharedPreferences("hotkeys",MODE_PRIVATE).getBoolean("enabled",false));
         findViewById(R.id.shizuku).setOnClickListener(v->{if(Shizuku.pingBinder()){try{if(Shizuku.checkSelfPermission()!=0)Shizuku.requestPermission(REQ);}catch(Exception ignored){}}else toast("Hãy mở Shizuku trước.");});
         findViewById(R.id.overlay).setOnClickListener(v->{if(!Settings.canDrawOverlays(this))startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:"+getPackageName())));else toast("Đã có quyền cửa sổ nổi.");});
-        findViewById(R.id.accessibility).setOnClickListener(v->startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
-        Button accessibilityShortcut=findViewById(R.id.accessibilityShortcut);
-        accessibilityShortcut.setOnClickListener(v->{
-            if(AccessibilityShortcutService.isRunning){
-                stopService(new Intent(this,AccessibilityShortcutService.class));
-                accessibilityShortcut.setText("Hiện nút nổi Trợ năng");
-                toast("Đã ẩn nút nổi Trợ năng.");
-            }else if(!Settings.canDrawOverlays(this)){
-                startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));
-                toast("Hãy cấp quyền cửa sổ nổi rồi bật nút lại.");
-            }else{
-                startService(new Intent(this,AccessibilityShortcutService.class));
-                accessibilityShortcut.setText("Ẩn nút nổi Trợ năng");
-                toast("Đã hiện nút nổi Trợ năng.");
-            }
-        });
+        findViewById(R.id.accessibility).setOnClickListener(v->enableAccessibilityWithShizuku());
         speed.setProgress(100);speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){float x=Math.max(.25f,p/100f);speedText.setText(String.format(Locale.US,"Tốc độ %.2fx",x));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
         findViewById(R.id.record).setOnClickListener(v->{
             String macroName=name.getText().toString().trim();
@@ -81,6 +66,20 @@ public class MainActivity extends Activity {
         findViewById(R.id.exportBtn).setOnClickListener(v->exportData()); findViewById(R.id.importBtn).setOnClickListener(v->importData());
         refresh();
     }
+    private void enableAccessibilityWithShizuku(){
+        if(!Shizuku.pingBinder()){toast("Hãy khởi động Shizuku Next trước.");return;}
+        try{
+            if(Shizuku.checkSelfPermission()!=android.content.pm.PackageManager.PERMISSION_GRANTED){Shizuku.requestPermission(REQ);toast("Hãy cấp quyền Shizuku rồi nhấn nút lần nữa.");return;}
+            String component=getPackageName()+"/"+TouchRecordService.class.getName();
+            String script="current=$(settings get secure enabled_accessibility_services); "+
+                "case \":$current:\" in *\":" + component + ":\"*) ;; *) current=${current:+$current:}"+component+" ;; esac; "+
+                "settings put secure enabled_accessibility_services \"$current\"; settings put secure accessibility_enabled 1";
+            ShizukuShell.run("sh","-c",script);
+            String verify=ShizukuShell.run("settings","get","secure","enabled_accessibility_services");
+            if(verify.contains(component))toast("Đã bật Accessibility cho Macro Shizuku.");
+            else toast("Chưa bật được. Kiểm tra quyền Shizuku rồi thử lại.");
+        }catch(Throwable e){toast("Lỗi Shizuku: "+e.getMessage());}
+    }
     private void saveHotkeys(){String id="";int pos=hotkeyMacro.getSelectedItemPosition();List<MacroStore.Macro> ms=MacroStore.all(this);if(pos>=0&&pos<ms.size())id=ms.get(pos).id;getSharedPreferences("hotkeys",MODE_PRIVATE).edit().putBoolean("enabled",hotkeyEnabled.isChecked()).putString("selected_id",id).apply();toast("Đã lưu: Volume Up = chạy 1 lần • Volume Down = STOP ALL (trừ khi đang ghi)");}
     private int loopValue(){int p=loops.getSelectedItemPosition();return p==0?1:p==1?5:p==2?10:0;}
     private void refresh(){list.removeAllViews();List<MacroStore.Macro> ms=MacroStore.all(this);String selected=getSharedPreferences("hotkeys",MODE_PRIVATE).getString("selected_id","");ArrayList<String> names=new ArrayList<>();for(MacroStore.Macro m:ms)names.add(m.name);hotkeyMacro.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,names));for(int i=0;i<ms.size();i++)if(ms.get(i).id.equals(selected))hotkeyMacro.setSelection(i);if(ms.isEmpty()){TextView e=new TextView(this);e.setText("Chưa có macro. Bấm Ghi macro để tạo macro đầu tiên.");e.setPadding(8,24,8,24);list.addView(e);return;}for(MacroStore.Macro m:ms){LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(12,12,12,12);card.setBackgroundColor(0xFF172238);TextView t=new TextView(this);t.setText(m.name+"\n"+String.format(Locale.US,"%.2fx",m.speed)+" • "+(m.loops==0?"∞":m.loops)+" lần • "+m.actions.size()+" bước");t.setTextSize(16);t.setTextColor(0xFFF4F7FF);card.addView(t);Button play=btn("▶ Chạy");Button stop=btn("■ Dừng");Button edit=btn("Sửa");Button steps=btn("Bước");Button clone=btn("Nhân bản");Button del=btn("Xóa");card.addView(buttonRow(play,stop,edit));card.addView(buttonRow(steps,clone,del));list.addView(card);play.setOnClickListener(v->Player.play(this,m));stop.setOnClickListener(v->Player.stop(m.id));edit.setOnClickListener(v->editMacro(m));steps.setOnClickListener(v->editActions(m));clone.setOnClickListener(v->{MacroStore.Macro c=copy(m);c.id="m"+System.currentTimeMillis();c.name=m.name+" copy";MacroStore.add(this,c);refresh();});del.setOnClickListener(v->{new AlertDialog.Builder(this).setTitle("Xóa macro?").setMessage(m.name).setPositiveButton("Xóa",(d,w)->{Player.stop(m.id);MacroStore.delete(this,m.id);refresh();}).setNegativeButton("Hủy",null).show();});}}
@@ -124,6 +123,6 @@ public class MainActivity extends Activity {
     private void importData(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("application/json");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,IMPORT);}
     @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;try{if(r==EXPORT){OutputStream o=getContentResolver().openOutputStream(d.getData());o.write(MacroStore.exportJson(this).getBytes("UTF-8"));o.close();toast("Đã xuất backup.");}else{InputStream i=getContentResolver().openInputStream(d.getData());ByteArrayOutputStream b=new ByteArrayOutputStream();byte[] z=new byte[8192];int n;while((n=i.read(z))>0)b.write(z,0,n);i.close();MacroStore.importJson(this,b.toString("UTF-8"));refresh();toast("Đã nhập macro.");}}catch(Exception e){toast("Không thể xử lý file: "+e.getMessage());}}
     private void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
-    @Override protected void onResume(){super.onResume();refresh();Button b=findViewById(R.id.accessibilityShortcut);if(b!=null)b.setText(AccessibilityShortcutService.isRunning?"Ẩn nút nổi Trợ năng":"Hiện nút nổi Trợ năng");}
+    @Override protected void onResume(){super.onResume();refresh();}
     @Override protected void onDestroy(){Shizuku.removeRequestPermissionResultListener(permissionListener);super.onDestroy();}
 }
