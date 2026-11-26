@@ -5,7 +5,6 @@ import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.WindowManager;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
@@ -34,14 +33,15 @@ public class TouchRecordService extends AccessibilityService {
   super.onServiceConnected();
   instance=this;
   captureError="";
-  try {
-   AccessibilityServiceInfo info=getServiceInfo();
-   if(info!=null){
-    info.flags|=AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
-    setServiceInfo(info);
-    Log.i("TouchRecordService","Key filtering requested; flags="+info.flags);
-   }
-  } catch(Exception e){Log.e("TouchRecordService","Cannot enable key filtering",e);}
+  // Keep the service configuration static. Vivo ROMs may restart or drop
+  // accessibility services when their runtime configuration is rewritten.
+  // Key filtering is already declared in accessibility_service_config.xml.
+ }
+ @Override public boolean onUnbind(android.content.Intent intent){
+  android.util.Log.w("TouchRecordService","Accessibility service unbound by system");
+  endRecording();
+  if(instance==this)instance=null;
+  return super.onUnbind(intent);
  }
  private static Device findTouchDevice(String listing){
   String[] blocks=listing.split("(?=add device\\s+\\d+:)");
@@ -83,7 +83,7 @@ public class TouchRecordService extends AccessibilityService {
   if(c!=KeyEvent.KEYCODE_VOLUME_UP&&c!=KeyEvent.KEYCODE_VOLUME_DOWN)return false;
   SharedPreferences p=getSharedPreferences("hotkeys",MODE_PRIVATE);
   boolean enabled=p.getBoolean("enabled",false);
-  Log.i("TouchRecordService","Volume key received: code="+c+", action="+e.getAction()+", repeat="+e.getRepeatCount()+", recording="+recording+", hotkeys="+enabled);
+  android.util.Log.i("TouchRecordService","Volume key received: code="+c+", action="+e.getAction()+", repeat="+e.getRepeatCount()+", recording="+recording+", hotkeys="+enabled);
   if(recording){
    if(c==KeyEvent.KEYCODE_VOLUME_DOWN&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)endRecording();
    return true;
