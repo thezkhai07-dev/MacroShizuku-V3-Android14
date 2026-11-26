@@ -5,6 +5,7 @@ import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.WindowManager;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
@@ -29,7 +30,19 @@ public class TouchRecordService extends AccessibilityService {
  public static boolean hasPendingCapture(){return pendingCapture;}
  public static String getCaptureError(){return captureError;}
  public static void clearPendingCapture(){pendingCapture=false;synchronized(actions){actions.clear();}}
- @Override public void onServiceConnected(){super.onServiceConnected();instance=this;captureError="";}
+ @Override public void onServiceConnected(){
+  super.onServiceConnected();
+  instance=this;
+  captureError="";
+  try {
+   AccessibilityServiceInfo info=getServiceInfo();
+   if(info!=null){
+    info.flags|=AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
+    setServiceInfo(info);
+    Log.i("TouchRecordService","Key filtering requested; flags="+info.flags);
+   }
+  } catch(Exception e){Log.e("TouchRecordService","Cannot enable key filtering",e);}
+ }
  private static Device findTouchDevice(String listing){
   String[] blocks=listing.split("(?=add device\\s+\\d+:)");
   Pattern pp=Pattern.compile("(/dev/input/event\\d+)"),px=Pattern.compile("ABS_MT_POSITION_X.*?min\\s+(-?\\d+),\\s*max\\s+(-?\\d+)"),py=Pattern.compile("ABS_MT_POSITION_Y.*?min\\s+(-?\\d+),\\s*max\\s+(-?\\d+)");
@@ -65,7 +78,23 @@ public class TouchRecordService extends AccessibilityService {
  private static void stopEventProcess(){recording=false;Object p=eventProcess;eventProcess=null;ShizukuShell.destroy(p);}
  public static List<MacroStore.Action> endRecording(){recording=false;stopEventProcess();Thread t=captureThread;if(t!=null)try{t.join(300);}catch(InterruptedException ignored){}List<MacroStore.Action> c=snapshot();pendingCapture=!c.isEmpty();return c;}
  @Override public void onDestroy(){endRecording();if(instance==this)instance=null;super.onDestroy();}
- @Override public boolean onKeyEvent(KeyEvent e){int c=e.getKeyCode();if(c!=KeyEvent.KEYCODE_VOLUME_UP&&c!=KeyEvent.KEYCODE_VOLUME_DOWN)return false;if(recording){if(c==KeyEvent.KEYCODE_VOLUME_DOWN&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)endRecording();return true;}SharedPreferences p=getSharedPreferences("hotkeys",MODE_PRIVATE);if(!p.getBoolean("enabled",false))return false;if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0){if(c==KeyEvent.KEYCODE_VOLUME_UP)playSelectedOnce();else Player.stopAll();}return true;}
+ @Override public boolean onKeyEvent(KeyEvent e){
+  int c=e.getKeyCode();
+  if(c!=KeyEvent.KEYCODE_VOLUME_UP&&c!=KeyEvent.KEYCODE_VOLUME_DOWN)return false;
+  SharedPreferences p=getSharedPreferences("hotkeys",MODE_PRIVATE);
+  boolean enabled=p.getBoolean("enabled",false);
+  Log.i("TouchRecordService","Volume key received: code="+c+", action="+e.getAction()+", repeat="+e.getRepeatCount()+", recording="+recording+", hotkeys="+enabled);
+  if(recording){
+   if(c==KeyEvent.KEYCODE_VOLUME_DOWN&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)endRecording();
+   return true;
+  }
+  if(!enabled)return false;
+  if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0){
+   if(c==KeyEvent.KEYCODE_VOLUME_UP)playSelectedOnce();
+   else Player.stopAll();
+  }
+  return true;
+ }
  private void playSelectedOnce(){String id=getSharedPreferences("hotkeys",MODE_PRIVATE).getString("selected_id","");if(id.isEmpty())return;MacroStore.Macro m=MacroStore.find(this,id);if(m==null||Player.isRunning(id))return;Player.playOnce(this,m);}
  @Override public void onAccessibilityEvent(AccessibilityEvent e){}
  @Override public void onInterrupt(){}
