@@ -7,6 +7,7 @@ public class FloatingService extends Service {
     private WindowManager wm; private final List<View> views=new ArrayList<>(); private boolean collapsed=false;
     private android.content.SharedPreferences prefs(){return getSharedPreferences("floating_style",MODE_PRIVATE);}
     private int buttonSize(){return Math.max(48,Math.min(200,prefs().getInt("size",72)));}
+    private int buttonWidth(){return Math.max(48,Math.min(300,prefs().getInt("width",buttonSize())));}
     private int buttonAlpha(){return Math.max(0,Math.min(100,prefs().getInt("alpha",85)));}
     private int buttonColor(){return prefs().getInt("color",0xFF202F4A);}
     private boolean locked(){return prefs().getBoolean("locked",false);}
@@ -25,7 +26,7 @@ public class FloatingService extends Service {
             if(e.getAction()==MotionEvent.ACTION_MOVE){float dx=e.getRawX()-sx,dy=e.getRawY()-sy;if(Math.abs(dx)+Math.abs(dy)>12)moved=true;if(moved&&!locked()){lp.x=ox+(int)dx;lp.y=oy+(int)dy;wm.updateViewLayout(q,lp);}return true;}
             if(e.getAction()==MotionEvent.ACTION_UP||e.getAction()==MotionEvent.ACTION_CANCEL){if(m.loops!=1&&started)Player.stop(m.id);if(!moved&&m.loops==1&&e.getAction()==MotionEvent.ACTION_UP)Player.play(FloatingService.this,m);if(moved&&!locked())prefs().edit().putInt(key+"x",lp.x).putInt(key+"y",lp.y).apply();return true;}return true;
         }});
-        WindowManager.LayoutParams lp=params(x,py);lp.width=size;lp.height=size;wm.addView(b,lp);views.add(b);
+        WindowManager.LayoutParams lp=params(x,py);lp.width=buttonWidth();lp.height=size;wm.addView(b,lp);views.add(b);
     }
     private void addToggle(int y){TextView t=new TextView(this);t.setText(collapsed?"＋":"☰");t.setTextSize(20);t.setTextColor(Color.WHITE);t.setGravity(Gravity.CENTER);t.setBackground(circle(0xEE263B59));t.setOnClickListener(v->{collapsed=!collapsed;refresh();});makeDraggable(t,"toggle");WindowManager.LayoutParams p=params(prefs().getInt("togglex",20),prefs().getInt("toggley",y));p.width=52;p.height=52;wm.addView(t,p);views.add(t);}
     private void addLock(int y){TextView t=new TextView(this);t.setText(locked()?"🔒":"🔓");t.setTextSize(19);t.setGravity(Gravity.CENTER);t.setBackground(circle(0xEE263B59));t.setContentDescription(locked()?"Mở khóa vị trí nút nổi":"Khóa vị trí nút nổi");t.setOnClickListener(v->{prefs().edit().putBoolean("locked",!locked()).apply();refresh();});makeDraggable(t,"lock");WindowManager.LayoutParams p=params(prefs().getInt("lockx",80),prefs().getInt("locky",y));p.width=52;p.height=52;wm.addView(t,p);views.add(t);}
