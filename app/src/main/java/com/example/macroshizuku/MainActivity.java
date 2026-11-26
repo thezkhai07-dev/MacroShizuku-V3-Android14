@@ -79,24 +79,23 @@ public class MainActivity extends Activity {
         toast("Đang bật Trợ năng Macro Shizuku bằng Shizuku...");
         new Thread(()->{
             String component=getPackageName()+"/"+TouchRecordService.class.getName();
-            String script="component='"+component+"'; "+
-                "current=$(settings get secure enabled_accessibility_services 2>&1) || exit 11; "+
-                "[ \\"$current\\" = \\"null\\" ] && current=''; "+
-                "case \\":$current:\\" in *\\":$component:\\"*) ;; *) current=\\"\${current:+$current:}$component\\" ;; esac; "+
-                "settings put secure enabled_accessibility_services \\"$current\\" || exit 12; "+
-                "settings put secure accessibility_enabled 1 || exit 13; "+
-                "sleep 1; "+
-                "check=$(settings get secure enabled_accessibility_services 2>&1); "+
-                "master=$(settings get secure accessibility_enabled 2>&1); "+
-                "case \\":$check:\\" in *\\":$component:\\"*) [ \\"$master\\" = \\"1\\" ] && echo MACRO_A11Y_ENABLED || echo MASTER_SWITCH_FAILED ;; *) echo SERVICE_WRITE_FAILED ;; esac";
+            String script="component="+component+"; "+
+                "current=$(settings get secure enabled_accessibility_services); "+
+                "[ $current = null ] && current=; "+
+                "case $current in *$component*) ;; *) current=${current:+$current:}$component ;; esac; "+
+                "settings put secure enabled_accessibility_services $current || echo SERVICE_WRITE_FAILED; "+
+                "settings put secure accessibility_enabled 1 || echo MASTER_SWITCH_FAILED; "+
+                "sleep 1; check=$(settings get secure enabled_accessibility_services); "+
+                "master=$(settings get secure accessibility_enabled); "+
+                "case $check in *$component*) [ $master = 1 ] && echo MACRO_A11Y_ENABLED || echo MASTER_SWITCH_FAILED ;; *) echo SERVICE_WRITE_FAILED ;; esac";
             String result;
             try{result=ShizukuShell.run("sh","-c",script);}
             catch(Throwable e){result="ERROR: "+e.getMessage();}
             final String output=result==null?"":result.trim();
             runOnUiThread(()->{
                 if(output.contains("MACRO_A11Y_ENABLED"))toast("Đã bật Trợ năng Macro Shizuku. Đang chờ Android kết nối dịch vụ.");
-                else if(output.contains("SERVICE_WRITE_FAILED"))toast("Vivo đã chặn ghi danh sách Trợ năng. Hãy kiểm tra quyền Shizuku/giới hạn cài đặt.");
-                else if(output.contains("MASTER_SWITCH_FAILED"))toast("Đã thêm dịch vụ nhưng công tắc Trợ năng hệ thống chưa bật.");
+                else if(output.contains("SERVICE_WRITE_FAILED"))toast("Không ghi được danh sách Trợ năng qua Shizuku: "+output);
+                else if(output.contains("MASTER_SWITCH_FAILED"))toast("Công tắc Trợ năng hệ thống chưa bật: "+output);
                 else toast("Không bật được Trợ năng qua Shizuku: "+(output.isEmpty()?"không có phản hồi":output));
             });
         },"EnableMacroAccessibility").start();
