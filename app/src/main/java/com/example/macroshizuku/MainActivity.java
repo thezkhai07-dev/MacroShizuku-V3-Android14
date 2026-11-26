@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
             m.speed=Math.max(.25f,speed.getProgress()/100f);m.loops=loopValue();m.actions=captured;m.floating=true;
             MacroStore.add(this,m);TouchRecordService.clearPendingCapture();toast("Đã lưu "+n+" • "+m.actions.size()+" thao tác");refresh();
         });
-        findViewById(R.id.floatBtn).setOnClickListener(v->{if(!Settings.canDrawOverlays(this)){startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));return;}startService(new Intent(this,FloatingService.class));});
+        findViewById(R.id.floatBtn).setOnClickListener(v->{if(!Settings.canDrawOverlays(this)){toast("Hãy cấp quyền cửa sổ nổi.");return;}startService(new Intent(this,FloatingService.class));});
         SeekBar floatSize=findViewById(R.id.floatSize);
         SeekBar floatAlpha=findViewById(R.id.floatAlpha);
         TextView floatSizeText=findViewById(R.id.floatSizeText);
@@ -65,9 +65,6 @@ public class MainActivity extends Activity {
         findViewById(R.id.saveHotkey).setOnClickListener(v->saveHotkeys());
         findViewById(R.id.exportBtn).setOnClickListener(v->exportData()); findViewById(R.id.importBtn).setOnClickListener(v->importData());
         refresh();
-        String backupAction=getIntent().getStringExtra("backup_action");
-        if("export".equals(backupAction))exportData();
-        else if("import".equals(backupAction))importData();
     }
     private void saveHotkeys(){String id="";int pos=hotkeyMacro.getSelectedItemPosition();List<MacroStore.Macro> ms=MacroStore.all(this);if(pos>=0&&pos<ms.size())id=ms.get(pos).id;getSharedPreferences("hotkeys",MODE_PRIVATE).edit().putBoolean("enabled",hotkeyEnabled.isChecked()).putString("selected_id",id).apply();toast("Đã lưu: Volume Up = chạy 1 lần • Volume Down = STOP ALL (trừ khi đang ghi)");}
     private int loopValue(){int p=loops.getSelectedItemPosition();return p==0?1:p==1?5:p==2?10:0;}
@@ -112,16 +109,6 @@ public class MainActivity extends Activity {
     private void importData(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("application/json");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,IMPORT);}
     @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;try{if(r==EXPORT){OutputStream o=getContentResolver().openOutputStream(d.getData());o.write(MacroStore.exportJson(this).getBytes("UTF-8"));o.close();toast("Đã xuất backup.");}else{InputStream i=getContentResolver().openInputStream(d.getData());ByteArrayOutputStream b=new ByteArrayOutputStream();byte[] z=new byte[8192];int n;while((n=i.read(z))>0)b.write(z,0,n);i.close();MacroStore.importJson(this,b.toString("UTF-8"));refresh();toast("Đã nhập macro.");}}catch(Exception e){toast("Không thể xử lý file: "+e.getMessage());}}
     private void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
-    @Override protected void onResume(){
-        super.onResume();refresh();
-        Button floatingButton=findViewById(R.id.floatBtn);
-        if(Settings.canDrawOverlays(this)){
-            floatingButton.setVisibility(View.GONE);
-            if(!FloatingService.isRunning)startService(new Intent(this,FloatingService.class));
-        }else{
-            floatingButton.setVisibility(View.VISIBLE);
-            floatingButton.setText("CẤP QUYỀN VÀ BẬT NÚT ĐIỀU KHIỂN NỔI");
-        }
-    }
+    @Override protected void onResume(){super.onResume();refresh();}
     @Override protected void onDestroy(){Shizuku.removeRequestPermissionResultListener(permissionListener);super.onDestroy();}
 }
