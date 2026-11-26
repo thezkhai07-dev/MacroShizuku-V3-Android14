@@ -67,21 +67,32 @@ public class MainActivity extends Activity {
         refresh();
     }
     private void enableAccessibilityWithShizuku(){
+        android.content.ComponentName service=new android.content.ComponentName(this,TouchRecordService.class);
         try{
-            android.content.ComponentName service=new android.content.ComponentName(this,TouchRecordService.class);
+            // Mở trực tiếp màn hình cấu hình lối tắt, chỉ lọc Macro Shizuku V3.
+            // Android Settings đọc danh sách mục tiêu từ Bundle ":settings:show_fragment_args",
+            // với khóa "targets" chứa component.flattenToString().
+            Bundle args=new Bundle();
+            args.putStringArray("targets",new String[]{service.flattenToString()});
+            Intent shortcut=new Intent("android.settings.ACCESSIBILITY_SHORTCUT_SETTINGS");
+            shortcut.putExtra(":settings:show_fragment_args",args);
+            shortcut.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(shortcut);
+            return;
+        }catch(Throwable ignored){}
+        try{
             Intent detail=new Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS");
             detail.putExtra("android.intent.extra.COMPONENT_NAME",service);
             detail.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if(detail.resolveActivity(getPackageManager())!=null){
-                startActivity(detail);
-                return;
+            startActivity(detail);
+            toast("Nếu chưa bật Trợ năng, hãy bật Macro Shizuku V3 trước rồi mở lại mục Lối tắt.");
+        }catch(Throwable ignored){
+            try{
+                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                toast("Chọn Macro Shizuku V3, bật Cho phép, sau đó vào Lối tắt để tạo lối tắt.");
+            }catch(Throwable e){
+                toast("Không mở được cài đặt Trợ năng: "+e.getMessage());
             }
-        }catch(Throwable ignored){}
-        try{
-            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-            toast("Hãy chọn Macro Shizuku V3 rồi bật Cho phép.");
-        }catch(Throwable e){
-            toast("Không mở được cài đặt Trợ năng: "+e.getMessage());
         }
     }
     private void saveHotkeys(){String id="";int pos=hotkeyMacro.getSelectedItemPosition();List<MacroStore.Macro> ms=MacroStore.all(this);if(pos>=0&&pos<ms.size())id=ms.get(pos).id;getSharedPreferences("hotkeys",MODE_PRIVATE).edit().putBoolean("enabled",hotkeyEnabled.isChecked()).putString("selected_id",id).apply();toast("Đã lưu: Volume Up = chạy 1 lần • Volume Down = STOP ALL (trừ khi đang ghi)");}
