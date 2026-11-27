@@ -101,6 +101,7 @@ public class MainActivity extends Activity {
         findViewById(R.id.exportBtn).setOnClickListener(v->exportData()); findViewById(R.id.importBtn).setOnClickListener(v->importData());
         refresh();
     }
+    @Override protected void onResume(){super.onResume();if(list!=null)updateStatusIndicators();}
     private void setVneidCompatibilityMode(boolean enabled){
         getSharedPreferences("compatibility",MODE_PRIVATE).edit().putBoolean("vneid_mode",enabled).commit();
         ComponentName service=new ComponentName(this,TouchRecordService.class);
