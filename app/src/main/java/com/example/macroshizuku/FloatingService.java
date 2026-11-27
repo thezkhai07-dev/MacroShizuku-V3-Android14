@@ -25,6 +25,17 @@ public class FloatingService extends Service {
     private int menuSize(){return clamp(prefs().getInt("menu_size",56),36,120);}
     private int menuAlpha(){return clamp(prefs().getInt("menu_alpha",90),0,100);}
     private boolean recording(){return TouchRecordService.recording;}
+    private final Handler uiHandler=new Handler(Looper.getMainLooper());
+    private View statusOverlay;
+    private void showOverlayMessage(String message){
+        try{
+            if(statusOverlay!=null){wm.removeView(statusOverlay);statusOverlay=null;}
+            TextView banner=new TextView(this);banner.setText(message);banner.setTextColor(Color.WHITE);banner.setTextSize(14);banner.setGravity(Gravity.CENTER);banner.setPadding(dp(18),dp(12),dp(18),dp(12));banner.setBackground(rounded(0xFF173B5E,98));
+            WindowManager.LayoutParams p=params(0,dp(72));p.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;p.flags|=WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+            statusOverlay=banner;wm.addView(banner,p);
+            uiHandler.postDelayed(()->{try{if(statusOverlay==banner){wm.removeView(banner);statusOverlay=null;}}catch(Exception ignored){}},3500);
+        }catch(Exception ignored){}
+    }
     @Override public void onCreate(){super.onCreate();isRunning=true;wm=(WindowManager)getSystemService(WINDOW_SERVICE);migrateOldFloatingButtons();refresh();}
     private void migrateOldFloatingButtons(){
         if(prefs().getBoolean("single_menu_migrated",false))return;
@@ -115,9 +126,30 @@ public class FloatingService extends Service {
             public void onStopTrackingTouch(SeekBar b){}
         });
     }
+    private void addSpeedSlider(LinearLayout box,MacroStore.Macro macro){
+        float initial=Math.max(.25f,Math.min(10f,macro.speed));
+        TextView title=label(String.format(java.util.Locale.US,"Tốc độ: %.2fx",initial));box.addView(title);
+        SeekBar bar=new SeekBar(this);bar.setMax(39);bar.setProgress(clamp(Math.round(initial*4)-1,0,39));box.addView(bar);
+        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar b,int p,boolean user){float speed=(p+1)*0.25f;title.setText(String.format(java.util.Locale.US,"Tốc độ: %.2fx",speed));if(user){MacroStore.Macro latest=MacroStore.find(FloatingService.this,macro.id);if(latest!=null){latest.speed=speed;MacroStore.upsert(FloatingService.this,latest);}}}
+            public void onStartTrackingTouch(SeekBar b){}
+            public void onStopTrackingTouch(SeekBar b){}
+        });
+    }
+    private void makePanelDraggable(View handle,View panel){
+        handle.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;boolean moved;
+            public boolean onTouch(View v,MotionEvent e){
+                WindowManager.LayoutParams lp=(WindowManager.LayoutParams)panel.getLayoutParams();
+                if(e.getAction()==MotionEvent.ACTION_DOWN){sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;moved=false;return true;}
+                if(e.getAction()==MotionEvent.ACTION_MOVE){float dx=e.getRawX()-sx,dy=e.getRawY()-sy;if(Math.abs(dx)+Math.abs(dy)>dp(6))moved=true;if(moved){lp.x=ox+(int)dx;lp.y=oy+(int)dy;try{wm.updateViewLayout(panel,lp);}catch(Exception ignored){}}return true;}
+                if(e.getAction()==MotionEvent.ACTION_UP){if(moved)prefs().edit().putInt("menu_panel_x",lp.x).putInt("menu_panel_y",lp.y).apply();return true;}
+                return true;
+            }
+        });
+    }
     private void showMenuPanel(){
         LinearLayout root=vertical();root.setPadding(dp(12),dp(10),dp(12),dp(10));root.setBackground(rounded(0xFF101D31,96));
-        TextView heading=label("MACRO CONTROL");heading.setTextSize(16);heading.setTypeface(null,1);root.addView(heading);
+        TextView heading=label("☰  MACRO CONTROL  •  KÉO ĐỂ DI CHUYỂN");heading.setTextSize(15);heading.setTypeface(null,1);heading.setBackground(rounded(0xFF294D72,90));root.addView(heading);
         LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);
         Button record=actionButton(recording()?"■ ĐANG GHI":"● GHI");Button save=actionButton("■ DỪNG & LƯU");actions.addView(record,new LinearLayout.LayoutParams(0,-2,1));actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));root.addView(actions);
         record.setOnClickListener(v->{
@@ -143,6 +175,7 @@ public class FloatingService extends Service {
             addSlider(card,"Rộng",36,400,initialW," dp",v->updateMacroStyle(m.id,"w",v));
             addSlider(card,"Cao",36,400,initialH," dp",v->updateMacroStyle(m.id,"h",v));
             addSlider(card,"Độ mờ",0,100,initialA,"%",v->updateMacroStyle(m.id,"a",v));
+            addSpeedSlider(card,m);
             list.addView(card);
         }
         scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(300)));
@@ -150,9 +183,11 @@ public class FloatingService extends Service {
         addSlider(root,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();applyMenuIconStyle();});
         addSlider(root,"Độ mờ icon",0,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
         Button close=actionButton("ĐÓNG MENU");root.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
-        WindowManager.LayoutParams p=params(prefs().getInt("menux",20)+dp(menuSize())+dp(8),prefs().getInt("menuy",dp(120)));
+        int defaultX=prefs().getInt("menux",20)+dp(menuSize())+dp(8);
+        int defaultY=prefs().getInt("menuy",dp(120));
+        WindowManager.LayoutParams p=params(prefs().getInt("menu_panel_x",defaultX),prefs().getInt("menu_panel_y",defaultY));
         p.width=dp(300);p.height=-2;p.flags|=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-        menuPanel=root;addView(root,p);
+        menuPanel=root;addView(root,p);makePanelDraggable(heading,root);
     }
     private void applyMenuIconStyle(){
         if(menuIconView==null)return;
@@ -165,19 +200,21 @@ public class FloatingService extends Service {
         if("w".equals(property))m.buttonWidth=value;
         else if("h".equals(property))m.buttonHeight=value;
         else if("a".equals(property))m.buttonAlpha=value;
+        else if("speed".equals(property))m.speed=Math.max(.25f,Math.min(10f,value/4f));
         MacroStore.upsert(this,m);
         // Update macro views without rebuilding the menu while the user is dragging a slider.
         for(View view:new ArrayList<>(views))if(view!=menuPanel){try{wm.removeView(view);views.remove(view);}catch(Exception ignored){}}
         int stackY=dp(90);for(MacroStore.Macro item:MacroStore.all(this))if(item.floating){addMacro(item,stackY);stackY+=dp((item.buttonHeight>0?item.buttonHeight:prefs().getInt("size",72))+8);}
     }
     private void saveRecordingFromMenu(){
-        if(!recording()&&!TouchRecordService.hasPendingCapture()){Toast.makeText(this,"Chưa có bản ghi để lưu.",Toast.LENGTH_SHORT).show();return;}
+        if(!recording()&&!TouchRecordService.hasPendingCapture()){String msg="Chưa có bản ghi để lưu.";Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_SHORT).show();showOverlayMessage(msg);return;}
         List<MacroStore.Action> captured=TouchRecordService.endRecording();
-        if(captured==null||captured.isEmpty()){Toast.makeText(this,"Bản ghi chưa có thao tác nào, chưa lưu.",Toast.LENGTH_LONG).show();refresh();return;}
+        if(captured==null||captured.isEmpty()){String msg="Bản ghi chưa có thao tác nào, chưa lưu.";Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();showOverlayMessage(msg);refresh();return;}
         MacroStore.Macro m=new MacroStore.Macro("m"+System.currentTimeMillis(),"Macro "+(MacroStore.all(this).size()+1));
         m.actions=captured;m.speed=1f;m.loops=1;m.floating=false;
         MacroStore.add(this,m);TouchRecordService.clearPendingCapture();
-        Toast.makeText(this,"Đã lưu "+m.name+" • "+captured.size()+" thao tác.",Toast.LENGTH_LONG).show();
+        String msg="Đã lưu "+m.name+" • "+captured.size()+" thao tác.";
+        Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();showOverlayMessage(msg);
         refresh();
     }
     @Override public int onStartCommand(Intent i,int f,int id){if("REFRESH".equals(i!=null?i.getAction():null))refresh();return START_STICKY;}
