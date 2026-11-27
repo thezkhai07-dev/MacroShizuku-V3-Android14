@@ -398,16 +398,7 @@ public class TouchRecordService extends AccessibilityService {
         boolean enabled = prefs.getBoolean("enabled", false);
         android.util.Log.i("TouchRecordService", "Volume hotkey: code=" + code + ", source=" + source + ", recording=" + recording + ", enabled=" + enabled);
         if (recording) {
-            if (code == KeyEvent.KEYCODE_VOLUME_DOWN) {
-                consumeVolumeDownUntilMs = SystemClock.elapsedRealtime() + 1200;
-                List<MacroStore.Action> stopped = endRecording();
-                int count = stopped == null ? 0 : stopped.size();
-                String message = count > 0
-                    ? "Đã dừng ghi macro • " + count + " thao tác. Quay lại app và nhấn LƯU."
-                    : "Đã dừng ghi macro nhưng chưa có thao tác nào. Hãy ghi lại rồi thử lại.";
-                showRecordingStoppedMessage(message);
-                android.util.Log.i("TouchRecordService", "Recording stopped by Volume Down; captured actions=" + count);
-            }
+            if (code == KeyEvent.KEYCODE_VOLUME_DOWN) stopRecordingFromVolumeDown();
             return;
         }
         if (!enabled) return;
@@ -415,11 +406,29 @@ public class TouchRecordService extends AccessibilityService {
         else if (code == KeyEvent.KEYCODE_VOLUME_DOWN) Player.stopAll();
     }
 
+    private void stopRecordingFromVolumeDown() {
+        consumeVolumeDownUntilMs = SystemClock.elapsedRealtime() + 1500;
+        if (!recording) return;
+        List<MacroStore.Action> stopped = endRecording();
+        int count = stopped == null ? 0 : stopped.size();
+        String message = count > 0
+            ? "Đã dừng ghi macro • " + count + " thao tác. Quay lại app và nhấn LƯU."
+            : "Đã dừng ghi macro nhưng chưa có thao tác nào. Hãy ghi lại rồi thử lại.";
+        showRecordingStoppedMessage(message);
+        android.util.Log.i("TouchRecordService", "Recording stopped by Volume Down; captured actions=" + count);
+    }
+
     private void showRecordingStoppedMessage(String message) {
-        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-            if (stopRecordingToast != null) stopRecordingToast.cancel();
-            stopRecordingToast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG);
-            stopRecordingToast.show();
+        android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+        main.post(() -> {
+            try {
+                if (stopRecordingToast != null) stopRecordingToast.cancel();
+                stopRecordingToast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG);
+                stopRecordingToast.show();
+                android.util.Log.i("TouchRecordService", "Shown recording stop message: " + message);
+            } catch (Exception e) {
+                android.util.Log.e("TouchRecordService", "Unable to show recording stop message", e);
+            }
         });
     }
 
@@ -427,8 +436,10 @@ public class TouchRecordService extends AccessibilityService {
         int code = e.getKeyCode();
         if (code != KeyEvent.KEYCODE_VOLUME_UP && code != KeyEvent.KEYCODE_VOLUME_DOWN) return false;
         if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
-            if (recording && code == KeyEvent.KEYCODE_VOLUME_DOWN)
-                consumeVolumeDownUntilMs = SystemClock.elapsedRealtime() + 1200;
+            if (recording && code == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                stopRecordingFromVolumeDown();
+                return true;
+            }
             dispatchVolumeHotkey(code, "Accessibility");
         }
         if (code == KeyEvent.KEYCODE_VOLUME_DOWN &&
