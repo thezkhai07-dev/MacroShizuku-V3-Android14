@@ -25,7 +25,14 @@ public class FloatingService extends Service {
     private int menuSize(){return clamp(prefs().getInt("menu_size",56),36,120);}
     private int menuAlpha(){return clamp(prefs().getInt("menu_alpha",90),10,100);}
     private boolean recording(){return TouchRecordService.recording;}
-    @Override public void onCreate(){super.onCreate();isRunning=true;wm=(WindowManager)getSystemService(WINDOW_SERVICE);refresh();}
+    @Override public void onCreate(){super.onCreate();isRunning=true;wm=(WindowManager)getSystemService(WINDOW_SERVICE);migrateOldFloatingButtons();refresh();}
+    private void migrateOldFloatingButtons(){
+        if(prefs().getBoolean("single_menu_migrated",false))return;
+        List<MacroStore.Macro> all=MacroStore.all(this);
+        for(MacroStore.Macro m:all)m.floating=false;
+        MacroStore.saveAll(this,all);
+        prefs().edit().putBoolean("single_menu_migrated",true).apply();
+    }
     private WindowManager.LayoutParams params(int x,int y){
         int type=Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE;
         WindowManager.LayoutParams p=new WindowManager.LayoutParams(-2,-2,type,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,PixelFormat.TRANSLUCENT);
@@ -132,7 +139,7 @@ public class FloatingService extends Service {
             lock.setOnCheckedChangeListener((button,checked)->{MacroStore.Macro latest=MacroStore.find(this,m.id);if(latest!=null){latest.buttonLocked=checked;MacroStore.upsert(this,latest);refresh();}});
             int initialW=m.buttonWidth>0?m.buttonWidth:prefs().getInt("width",72);
             int initialH=m.buttonHeight>0?m.buttonHeight:prefs().getInt("size",72);
-            int initialA=m.buttonAlpha>0?m.buttonAlpha:prefs().getInt("alpha",85);
+            int initialA=m.buttonAlpha>=0?m.buttonAlpha:prefs().getInt("alpha",85);
             addSlider(card,"Rộng",36,400,initialW," dp",v->updateMacroStyle(m.id,"w",v));
             addSlider(card,"Cao",36,400,initialH," dp",v->updateMacroStyle(m.id,"h",v));
             addSlider(card,"Độ mờ",0,100,initialA,"%",v->updateMacroStyle(m.id,"a",v));
@@ -141,7 +148,7 @@ public class FloatingService extends Service {
         scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(300)));
         root.addView(label("ICON MENU NỔI"));
         addSlider(root,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();applyMenuIconStyle();});
-        addSlider(root,"Độ mờ icon",10,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
+        addSlider(root,"Độ mờ icon",0,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
         Button close=actionButton("ĐÓNG MENU");root.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
         WindowManager.LayoutParams p=params(prefs().getInt("menux",20)+dp(menuSize())+dp(8),prefs().getInt("menuy",dp(120)));
         p.width=dp(300);p.height=-2;p.flags|=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
