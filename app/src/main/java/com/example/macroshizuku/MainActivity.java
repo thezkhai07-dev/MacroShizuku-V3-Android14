@@ -162,7 +162,7 @@ public class MainActivity extends Activity {
     }
     private Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(12);b.setMinWidth(0);b.setPadding(3,0,3,0);b.setAllCaps(false);b.setBackgroundResource(R.drawable.bg_glass_button);b.setTextColor(0xFFEAF7FF);return b;}
     private LinearLayout buttonRow(Button... items){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);for(Button b:items){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f);p.setMargins(3,2,3,2);row.addView(b,p);}return row;}
-    private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.floating=m.floating;c.buttonWidth=m.buttonWidth;c.buttonHeight=m.buttonHeight;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
+    private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.floating=m.floating;c.buttonWidth=m.buttonWidth;c.buttonHeight=m.buttonHeight;c.buttonAlpha=m.buttonAlpha;c.buttonLocked=m.buttonLocked;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
     private void editMacro(MacroStore.Macro m){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(30,10,30,10);
         EditText n=new EditText(this);n.setText(m.name);box.addView(n);
