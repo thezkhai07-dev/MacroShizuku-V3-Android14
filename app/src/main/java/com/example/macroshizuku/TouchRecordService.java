@@ -115,43 +115,69 @@ public class TouchRecordService extends AccessibilityService {
             p.pendingDown = false;
         }
 
+        private final Pattern eventPattern = Pattern.compile("\\b(EV_ABS|EV_KEY|EV_SYN)\\s+([A-Z0-9_]+)\\s+([0-9a-fA-F]+|DOWN|UP)\\b");
+
         void accept(String line) {
             if (!recording || line == null) return;
+            Matcher event = eventPattern.matcher(line);
+            if (!event.find()) return;
+
+            String type = event.group(1);
+            String code = event.group(2);
+            String valueText = event.group(3);
             long now = SystemClock.elapsedRealtime();
-            Matcher m = Pattern.compile("EV_ABS\\s+(ABS_[A-Z0-9_]+)\\s+([0-9a-fA-F]+)").matcher(line);
-            if (line.contains("EV_ABS ABS_MT_SLOT")) {
-                Matcher sm = Pattern.compile("EV_ABS\\s+ABS_MT_SLOT\\s+([0-9a-fA-F]+)").matcher(line);
-                if (sm.find()) slot = (int)Math.max(0, Math.min(15, parseHex(sm.group(1))));
-            } else if (m.find()) {
-                String code = m.group(1);
-                long value = parseHex(m.group(2));
+
+            if ("EV_ABS".equals(type)) {
+                if ("ABS_MT_SLOT".equals(code)) {
+                    slot = (int)Math.max(0, Math.min(15, parseHex(valueText)));
+                    return;
+                }
+
                 PointerState p = current();
                 if ("ABS_MT_TRACKING_ID".equals(code)) {
-                    if (value < 0) finish(p, now);
-                    else {
+                    long trackingId = parseHex(valueText);
+                    if (trackingId < 0) {
+                        finish(p, now);
+                    } else {
                         if (p.active) finish(p, now);
                         p.pendingDown = true;
                         p.active = false;
-                        p.hasX = p.hasY = false;
+                        p.hasX = false;
+                        p.hasY = false;
                     }
                 } else if ("ABS_MT_POSITION_X".equals(code) || "ABS_X".equals(code)) {
-                    p.x = value; p.hasX = true;
+                    p.x = parseHex(valueText);
+                    p.hasX = true;
                 } else if ("ABS_MT_POSITION_Y".equals(code) || "ABS_Y".equals(code)) {
-                    p.y = value; p.hasY = true;
+                    p.y = parseHex(valueText);
+                    p.hasY = true;
                 }
-            } else if (line.contains("EV_KEY BTN_TOUCH")) {
+                return;
+            }
+
+            if ("EV_KEY".equals(type) && "BTN_TOUCH".equals(code)) {
                 PointerState p = pointers.get(0);
-                if (p == null) { p = new PointerState(); pointers.put(0, p); }
-                if (line.trim().endsWith("DOWN")) {
-                    p.pendingDown = true; p.active = false;
-                } else if (line.trim().endsWith("UP")) {
+                if (p == null) {
+                    p = new PointerState();
+                    pointers.put(0, p);
+                }
+                if ("DOWN".equals(valueText) || "00000001".equalsIgnoreCase(valueText)) {
+                    p.pendingDown = true;
+                    p.active = false;
+                } else if ("UP".equals(valueText) || "00000000".equalsIgnoreCase(valueText)) {
                     finish(p, now);
                 }
-            } else if (line.contains("EV_SYN SYN_REPORT")) {
+                return;
+            }
+
+            if ("EV_SYN".equals(type) && "SYN_REPORT".equals(code)) {
                 for (PointerState p : pointers.values()) {
                     if (p.pendingDown && p.hasX && p.hasY) {
-                        p.startX = p.x; p.startY = p.y;
-                        p.downTime = now; p.pendingDown = false; p.active = true;
+                        p.startX = p.x;
+                        p.startY = p.y;
+                        p.downTime = now;
+                        p.pendingDown = false;
+                        p.active = true;
                     }
                 }
             }
