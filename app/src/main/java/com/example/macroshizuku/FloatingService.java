@@ -15,7 +15,7 @@ public class FloatingService extends Service {
     public static boolean isRunning=false;
     private WindowManager wm;
     private final List<View> views=new ArrayList<>();
-    private View menuPanel;
+    private View menuPanel,menuIconView;
     private boolean menuOpen=false;
     private android.content.SharedPreferences prefs(){return getSharedPreferences("floating_style",MODE_PRIVATE);}
     private int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+0.5f);}
@@ -43,17 +43,18 @@ public class FloatingService extends Service {
     private void refresh(){
         removeViews();
         List<MacroStore.Macro> macros=MacroStore.all(this);
-        for(MacroStore.Macro m:macros)if(m.floating)addMacro(m);
+        int stackY=dp(90);
+        for(MacroStore.Macro m:macros)if(m.floating){addMacro(m,stackY);stackY+=dp((m.buttonHeight>0?m.buttonHeight:prefs().getInt("size",72))+8);}
         addMenuIcon();
         if(menuOpen)showMenuPanel();
     }
-    private void addMacro(MacroStore.Macro m){
+    private void addMacro(MacroStore.Macro m,int defaultY){
         int h=m.buttonHeight>0?clamp(m.buttonHeight,36,400):clamp(prefs().getInt("size",72),36,400);
         int w=m.buttonWidth>0?clamp(m.buttonWidth,36,400):clamp(prefs().getInt("width",72),36,400);
-        int alpha=m.buttonAlpha>0?m.buttonAlpha:clamp(prefs().getInt("alpha",85),0,100);
+        int alpha=m.buttonAlpha>=0?m.buttonAlpha:clamp(prefs().getInt("alpha",85),0,100);
         TextView b=new TextView(this);b.setText(m.name);b.setTextColor(withAlpha(Color.WHITE,alpha));b.setTextSize(10);b.setGravity(Gravity.CENTER);b.setMaxLines(3);b.setEllipsize(android.text.TextUtils.TruncateAt.END);b.setPadding(dp(5),dp(5),dp(5),dp(5));b.setBackground(rounded(macroColor(),alpha));
         b.setContentDescription(m.name+(m.loops==1?" - chạm để chạy một lần":" - giữ để chạy, thả để dừng"));
-        String key="macro_"+m.id+"_";int x=prefs().getInt(key+"x",20),y=prefs().getInt(key+"y",dp(90));
+        String key="macro_"+m.id+"_";int x=prefs().getInt(key+"x",20),y=prefs().getInt(key+"y",defaultY);
         b.setOnTouchListener(new View.OnTouchListener(){
             float sx,sy;int ox,oy;boolean moved,started;
             public boolean onTouch(View q,MotionEvent e){
@@ -75,7 +76,7 @@ public class FloatingService extends Service {
         WindowManager.LayoutParams lp=params(x,y);lp.width=dp(w);lp.height=dp(h);addView(b,lp);
     }
     private void addMenuIcon(){
-        TextView icon=new TextView(this);icon.setText("☰");icon.setTextSize(21);icon.setTextColor(withAlpha(Color.WHITE,menuAlpha()));icon.setGravity(Gravity.CENTER);icon.setBackground(rounded(0xFF203A5C,menuAlpha()));icon.setContentDescription("Mở menu Macro");
+        TextView icon=new TextView(this);menuIconView=icon;icon.setText("☰");icon.setTextSize(21);icon.setTextColor(withAlpha(Color.WHITE,menuAlpha()));icon.setGravity(Gravity.CENTER);icon.setBackground(rounded(0xFF203A5C,menuAlpha()));icon.setContentDescription("Mở menu Macro");
         icon.setOnClickListener(v->{menuOpen=!menuOpen;refresh();});
         makeDraggable(icon,"menu");
         WindowManager.LayoutParams p=params(prefs().getInt("menux",20),prefs().getInt("menuy",dp(120)));
@@ -139,12 +140,18 @@ public class FloatingService extends Service {
         }
         scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(300)));
         root.addView(label("ICON MENU NỔI"));
-        addSlider(root,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();refresh();});
-        addSlider(root,"Độ mờ icon",10,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();refresh();});
+        addSlider(root,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();applyMenuIconStyle();});
+        addSlider(root,"Độ mờ icon",10,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
         Button close=actionButton("ĐÓNG MENU");root.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
         WindowManager.LayoutParams p=params(prefs().getInt("menux",20)+dp(menuSize())+dp(8),prefs().getInt("menuy",dp(120)));
         p.width=dp(300);p.height=-2;p.flags|=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
         menuPanel=root;addView(root,p);
+    }
+    private void applyMenuIconStyle(){
+        if(menuIconView==null)return;
+        menuIconView.setBackground(rounded(0xFF203A5C,menuAlpha()));
+        if(menuIconView instanceof TextView)((TextView)menuIconView).setTextColor(withAlpha(Color.WHITE,menuAlpha()));
+        try{WindowManager.LayoutParams p=(WindowManager.LayoutParams)menuIconView.getLayoutParams();p.width=dp(menuSize());p.height=dp(menuSize());wm.updateViewLayout(menuIconView,p);}catch(Exception ignored){}
     }
     private void updateMacroStyle(String id,String property,int value){
         MacroStore.Macro m=MacroStore.find(this,id);if(m==null)return;
@@ -154,7 +161,7 @@ public class FloatingService extends Service {
         MacroStore.upsert(this,m);
         // Update macro views without rebuilding the menu while the user is dragging a slider.
         for(View view:new ArrayList<>(views))if(view!=menuPanel){try{wm.removeView(view);views.remove(view);}catch(Exception ignored){}}
-        for(MacroStore.Macro item:MacroStore.all(this))if(item.floating)addMacro(item);
+        int stackY=dp(90);for(MacroStore.Macro item:MacroStore.all(this))if(item.floating){addMacro(item,stackY);stackY+=dp((item.buttonHeight>0?item.buttonHeight:prefs().getInt("size",72))+8);}
     }
     private void saveRecordingFromMenu(){
         if(!recording()&&!TouchRecordService.hasPendingCapture()){Toast.makeText(this,"Chưa có bản ghi để lưu.",Toast.LENGTH_SHORT).show();return;}
