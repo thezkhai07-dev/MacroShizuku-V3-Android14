@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
             String n=String.valueOf(name.getTag());
             if(n.equals("null")||n.trim().isEmpty())n="Macro "+(MacroStore.all(this).size()+1);
             MacroStore.Macro m=new MacroStore.Macro("m"+System.currentTimeMillis(),n);
-            m.speed=Math.max(.25f,Math.min(10f,speed.getProgress()/100f));m.loops=loopValue();m.actions=captured;m.floating=true;
+            m.speed=Math.max(.25f,Math.min(10f,speed.getProgress()/100f));m.loops=loopValue();m.actions=captured;m.floating=false;
             MacroStore.add(this,m);TouchRecordService.clearPendingCapture();toast("Đã lưu "+n+" • "+m.actions.size()+" thao tác");refresh();
         });
         findViewById(R.id.floatBtn).setOnClickListener(v->{if(!Settings.canDrawOverlays(this)){toast("Hãy cấp quyền cửa sổ nổi.");return;}startService(new Intent(this,FloatingService.class));});
