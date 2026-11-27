@@ -180,8 +180,8 @@ public class FloatingService extends Service {
         }
         scroll.addView(list);content.addView(scroll,new LinearLayout.LayoutParams(-1,dp(170)));
         content.addView(label("ICON MENU NỔI"));
-        addSlider(root,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();applyMenuIconStyle();});
-        addSlider(root,"Độ mờ icon",0,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
+        addSlider(content,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();applyMenuIconStyle();});
+        addSlider(content,"Độ mờ icon",0,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
         Button close=actionButton("ĐÓNG MENU");content.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
         int defaultX=prefs().getInt("menux",20)+dp(menuSize())+dp(8);
         int defaultY=prefs().getInt("menuy",dp(120));
