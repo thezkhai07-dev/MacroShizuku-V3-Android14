@@ -58,7 +58,7 @@
             <Button android:id="@+id/exportBtn" android:text="Xuất backup" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
             <Button android:id="@+id/importBtn" android:text="Nhập backup" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
         </LinearLayout>
-        <Button android:id="@+id/stopAll" android:text="⛔ STOP ALL" android:textColor="#FFFFFF" android:backgroundTint="#C83E5A" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        <Button android:id="@+id/stopAll" android:text="⛔ STOP ALL" android:textColor="#F2FBFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         <TextView android:text="MACRO ĐÃ LƯU" android:textColor="#F4F7FF" android:textStyle="bold" android:textSize="18sp" android:paddingTop="20dp" android:paddingBottom="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         <LinearLayout android:id="@+id/macroList" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         <TextView android:text="Macro Shizuku • V3" android:textColor="#637493" android:textSize="11sp" android:gravity="center" android:paddingTop="20dp" android:paddingBottom="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
