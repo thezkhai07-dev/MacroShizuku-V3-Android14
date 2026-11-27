@@ -35,11 +35,11 @@ public class MainActivity extends Activity {
             if(!ShizukuShell.ready()){toast("Hãy kết nối Shizuku Next và cấp quyền cho Macro By Nhật ĐZ trước.");return;}
             final String finalName=macroName;
             new AlertDialog.Builder(this).setTitle("Ghi macro không khóa cảm ứng")
-                .setMessage("Macro By Nhật ĐZ sẽ đọc sự kiện cảm ứng qua Shizuku. Bạn vẫn có thể chạm, vuốt và sử dụng ứng dụng bình thường trong lúc ghi. Không cần bật Trợ năng để ghi. Nhấn nút Dừng trong app để kết thúc.")
+                .setMessage("Macro By Nhật ĐZ sẽ đọc sự kiện cảm ứng qua Shizuku. Bạn vẫn có thể chạm, vuốt và sử dụng ứng dụng bình thường trong lúc ghi. Không cần bật Trợ năng để ghi. Khi ghi xong, hãy nhấn nút GIẢM ÂM LƯỢNG trên điện thoại để kết thúc ghi trước. Sau đó mới nhấn nút LƯU trong app. Nếu nhấn LƯU khi vẫn đang ghi, thao tác chạm vào nút đó có thể bị ghi vào macro.")
                 .setPositiveButton("Bắt đầu ghi",(d,w)->{
                     if(TouchRecordService.beginRecording(this)){
                         name.setTag(finalName);
-                        toast("Đang ghi: "+finalName+" • Bạn vẫn dùng màn hình bình thường");
+                        toast("Đang ghi: "+finalName+" • Nhấn GIẢM ÂM LƯỢNG để dừng, rồi mới nhấn LƯU");
                     }else toast(TouchRecordService.getCaptureError().isEmpty()?"Không khởi động được ghi cảm ứng.":TouchRecordService.getCaptureError());
                 }).setNegativeButton("Hủy",null).show();
         });
