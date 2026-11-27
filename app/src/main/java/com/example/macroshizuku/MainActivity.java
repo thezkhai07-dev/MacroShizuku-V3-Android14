@@ -101,7 +101,6 @@ public class MainActivity extends Activity {
         findViewById(R.id.exportBtn).setOnClickListener(v->exportData()); findViewById(R.id.importBtn).setOnClickListener(v->importData());
         refresh();
     }
-    @Override protected void onResume(){super.onResume();if(list!=null)updateStatusIndicators();}
     private void setVneidCompatibilityMode(boolean enabled){
         getSharedPreferences("compatibility",MODE_PRIVATE).edit().putBoolean("vneid_mode",enabled).commit();
         ComponentName service=new ComponentName(this,TouchRecordService.class);
@@ -188,6 +187,6 @@ public class MainActivity extends Activity {
     private void importData(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("application/json");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,IMPORT);}
     @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;try{if(r==EXPORT){OutputStream o=getContentResolver().openOutputStream(d.getData());o.write(MacroStore.exportJson(this).getBytes("UTF-8"));o.close();toast("Đã xuất backup.");}else{InputStream i=getContentResolver().openInputStream(d.getData());ByteArrayOutputStream b=new ByteArrayOutputStream();byte[] z=new byte[8192];int n;while((n=i.read(z))>0)b.write(z,0,n);i.close();MacroStore.importJson(this,b.toString("UTF-8"));refresh();toast("Đã nhập macro.");}}catch(Exception e){toast("Không thể xử lý file: "+e.getMessage());}}
     private void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
-    @Override protected void onResume(){super.onResume();refresh();}
+    @Override protected void onResume(){super.onResume();refresh();updateStatusIndicators();}
     @Override protected void onDestroy(){Shizuku.removeRequestPermissionResultListener(permissionListener);super.onDestroy();}
 }
