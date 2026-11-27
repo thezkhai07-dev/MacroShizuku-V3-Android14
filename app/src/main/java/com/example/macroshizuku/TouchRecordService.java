@@ -85,9 +85,9 @@ public class TouchRecordService extends AccessibilityService {
             } catch (Exception e) { return 0; }
         }
 
-        private float[] mapped(PointerState p) {
-            float nx = clamp((p.x - minX) / (float)(maxX - minX));
-            float ny = clamp((p.y - minY) / (float)(maxY - minY));
+        private float[] mapped(float rawX, float rawY) {
+            float nx = clamp((rawX - minX) / (float)(maxX - minX));
+            float ny = clamp((rawY - minY) / (float)(maxY - minY));
             float x = nx, y = ny;
             if (rotation == SurfaceRotation.ROTATION_90) { x = 1f - ny; y = nx; }
             else if (rotation == SurfaceRotation.ROTATION_180) { x = 1f - nx; y = 1f - ny; }
@@ -99,8 +99,8 @@ public class TouchRecordService extends AccessibilityService {
 
         private void finish(PointerState p, long now) {
             if (p == null || !p.active) return;
-            float[] a = mapped(p);
-            float[] b = mapped(p);
+            float[] a = mapped(p.startX, p.startY);
+            float[] b = mapped(p.x, p.y);
             long delay = lastAction == 0 ? 0 : Math.max(0, p.downTime - lastAction);
             long duration = Math.max(1, now - p.downTime);
             synchronized (actions) {
