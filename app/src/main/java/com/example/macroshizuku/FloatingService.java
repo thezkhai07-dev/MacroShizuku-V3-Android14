@@ -178,16 +178,29 @@ public class FloatingService extends Service {
             addSpeedSlider(card,m);
             list.addView(card);
         }
-        scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(300)));
+        // Keep the complete menu (macro list and floating-icon settings) inside one
+        // scroll container so the lower controls remain reachable in landscape.
+        root.addView(list);
         root.addView(label("ICON MENU NỔI"));
         addSlider(root,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();applyMenuIconStyle();});
         addSlider(root,"Độ mờ icon",0,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
         Button close=actionButton("ĐÓNG MENU");root.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
         int defaultX=prefs().getInt("menux",20)+dp(menuSize())+dp(8);
         int defaultY=prefs().getInt("menuy",dp(120));
+        ScrollView panelScroll=new ScrollView(this);
+        panelScroll.setFillViewport(true);
+        panelScroll.setVerticalScrollBarEnabled(true);
+        panelScroll.addView(root,new ScrollView.LayoutParams(-1,-2));
         WindowManager.LayoutParams p=params(prefs().getInt("menu_panel_x",defaultX),prefs().getInt("menu_panel_y",defaultY));
-        p.width=dp(300);p.height=-2;p.flags|=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-        menuPanel=root;addView(root,p);makePanelDraggable(heading,root);
+        p.width=dp(300);
+        android.util.DisplayMetrics panelMetrics=new android.util.DisplayMetrics();
+        wm.getDefaultDisplay().getRealMetrics(panelMetrics);
+        boolean landscape=panelMetrics.widthPixels>panelMetrics.heightPixels;
+        // In landscape, cap the panel to the available screen height; all settings
+        // remain accessible by scrolling instead of being clipped off-screen.
+        p.height=landscape?Math.max(dp(180),panelMetrics.heightPixels-dp(24)):-2;
+        p.flags|=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+        menuPanel=panelScroll;addView(panelScroll,p);makePanelDraggable(heading,panelScroll);
     }
     private void applyMenuIconStyle(){
         if(menuIconView==null)return;
