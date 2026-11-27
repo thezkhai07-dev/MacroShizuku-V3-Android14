@@ -97,7 +97,7 @@ public class TouchRecordService extends AccessibilityService {
             if (rotation == SurfaceRotation.ROTATION_90) { x = 1f - ny; y = nx; }
             else if (rotation == SurfaceRotation.ROTATION_180) { x = 1f - nx; y = 1f - ny; }
             else if (rotation == SurfaceRotation.ROTATION_270) { x = ny; y = 1f - nx; }
-            return new float[]{clamp(x) * (width - 1), clamp(y) * (height - 1)};
+            // Store display-relative fractions, not absolute pixels, so playback can adapt to the current orientation and resolution.\n            return new float[]{clamp(x), clamp(y)};
         }
 
         private static float clamp(float v) { return Math.max(0f, Math.min(1f, v)); }
