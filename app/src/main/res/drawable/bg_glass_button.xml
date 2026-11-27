@@ -1,33 +1,29 @@
-<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#665AE7FF">
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#445AE7FF">
     <item>
         <layer-list>
-            <!-- Translucent blue glass body -->
             <item android:top="2dp">
                 <shape android:shape="rectangle">
-                    <gradient android:angle="135" android:startColor="#A9366F9F" android:centerColor="#8B234F7A" android:endColor="#B00D294B"/>
+                    <gradient android:angle="135" android:startColor="#8A294D70" android:centerColor="#76203C5C" android:endColor="#900B1D34"/>
                     <corners android:radius="18dp"/>
-                    <stroke android:width="1dp" android:color="#705AE7FF"/>
+                    <stroke android:width="1dp" android:color="#555AE7FF"/>
                 </shape>
             </item>
-            <!-- Soft inner glass edge -->
             <item android:left="2dp" android:top="4dp" android:right="2dp" android:bottom="2dp">
                 <shape android:shape="rectangle">
                     <corners android:radius="15dp"/>
-                    <stroke android:width="1dp" android:color="#356FEAFF"/>
+                    <stroke android:width="1dp" android:color="#286FEAFF"/>
                 </shape>
             </item>
-            <!-- Very faint reflection, blended into the glass instead of a white shine -->
             <item android:left="3dp" android:top="2dp" android:right="3dp" android:bottom="3dp">
                 <shape android:shape="rectangle">
-                    <gradient android:angle="90" android:startColor="#16FFFFFF" android:centerColor="#05FFFFFF" android:endColor="#00FFFFFF"/>
+                    <gradient android:angle="90" android:startColor="#0EFFFFFF" android:centerColor="#04FFFFFF" android:endColor="#00FFFFFF"/>
                     <corners android:radius="16dp"/>
                 </shape>
             </item>
-            <!-- Minimal translucent rim, most visible only at the rounded corners -->
             <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp">
                 <shape android:shape="rectangle">
                     <corners android:radius="17dp"/>
-                    <stroke android:width="1dp" android:color="#20FFFFFF"/>
+                    <stroke android:width="1dp" android:color="#14FFFFFF"/>
                 </shape>
             </item>
         </layer-list>
