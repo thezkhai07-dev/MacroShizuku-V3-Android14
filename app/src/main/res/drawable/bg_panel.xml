@@ -1,27 +1,29 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dark translucent glass base with restrained blue tint -->
     <item android:left="1dp" android:top="3dp" android:right="1dp" android:bottom="1dp">
         <shape android:shape="rectangle">
-            <solid android:color="#3010203D"/>
+            <solid android:color="#24102030"/>
             <corners android:radius="26dp"/>
         </shape>
     </item>
     <item android:left="1dp" android:right="1dp" android:bottom="2dp">
         <shape android:shape="rectangle">
-            <gradient android:angle="135" android:startColor="#B83D78A8" android:centerColor="#8730527D" android:endColor="#9A102C50"/>
+            <gradient android:angle="135" android:startColor="#78304D6A" android:centerColor="#6420334D" android:endColor="#78101D32"/>
             <corners android:radius="25dp"/>
-            <stroke android:width="1dp" android:color="#C85AE7FF"/>
+            <stroke android:width="1dp" android:color="#655AE7FF"/>
         </shape>
     </item>
+    <!-- Barely visible cool reflection, not a bright white overlay -->
     <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="3dp">
         <shape android:shape="rectangle">
-            <gradient android:angle="90" android:startColor="#55DDF8FF" android:centerColor="#18A9E8FF" android:endColor="#00FFFFFF"/>
+            <gradient android:angle="90" android:startColor="#1A8DD8E8" android:centerColor="#0A6BAAC8" android:endColor="#00FFFFFF"/>
             <corners android:radius="23dp"/>
         </shape>
     </item>
     <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="3dp">
         <shape android:shape="rectangle">
             <corners android:radius="23dp"/>
-            <stroke android:width="1dp" android:color="#35E6FAFF"/>
+            <stroke android:width="1dp" android:color="#226FEAFF"/>
         </shape>
     </item>
 </layer-list>
