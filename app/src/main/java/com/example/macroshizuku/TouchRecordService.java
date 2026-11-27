@@ -94,10 +94,19 @@ public class TouchRecordService extends AccessibilityService {
             float nx = clamp((rawX - minX) / (float)(maxX - minX));
             float ny = clamp((rawY - minY) / (float)(maxY - minY));
             float x = nx, y = ny;
-            if (rotation == SurfaceRotation.ROTATION_90) { x = 1f - ny; y = nx; }
-            else if (rotation == SurfaceRotation.ROTATION_180) { x = 1f - nx; y = 1f - ny; }
-            else if (rotation == SurfaceRotation.ROTATION_270) { x = ny; y = 1f - nx; }
-            // Store display-relative fractions, not absolute pixels, so playback can adapt to the current orientation and resolution.
+            // Some touch controllers expose raw axes in natural orientation; others
+            // swap X/Y in landscape. Avoid rotating twice when the driver already did it.
+            boolean rawLandscape = (maxX - minX) > (maxY - minY);
+            boolean displayLandscape = width > height;
+            boolean axesNeedRotation = rawLandscape != displayLandscape;
+            if (rotation == SurfaceRotation.ROTATION_90 && axesNeedRotation) {
+                x = 1f - ny; y = nx;
+            } else if (rotation == SurfaceRotation.ROTATION_180) {
+                x = 1f - nx; y = 1f - ny;
+            } else if (rotation == SurfaceRotation.ROTATION_270 && axesNeedRotation) {
+                x = ny; y = 1f - nx;
+            }
+            // Store display-relative fractions so playback adapts to orientation and resolution.
             return new float[]{clamp(x), clamp(y)};
         }
 
