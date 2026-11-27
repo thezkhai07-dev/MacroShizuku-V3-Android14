@@ -20,11 +20,11 @@
         <LinearLayout android:orientation="vertical" android:padding="14dp"
             android:background="@drawable/bg_panel" android:layout_width="match_parent" android:layout_height="wrap_content">
             <TextView android:text="THIẾT LẬP HỆ THỐNG" android:textColor="#AFC0E2" android:textStyle="bold" android:textSize="13sp" android:paddingBottom="6dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-            <Button android:id="@+id/shizuku" android:text="1. Cấp quyền Shizuku" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-            <Button android:id="@+id/overlay" android:text="2. Cấp quyền cửa sổ nổi" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-            <Button android:id="@+id/accessibility" android:text="3. BẬT TRỢ NĂNG MACRO SHIZUKU" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-            <Button android:id="@+id/vneidMode" android:text="CHẾ ĐỘ VNeID: ẨN DỊCH VỤ TRỢ NĂNG" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-            <Button android:id="@+id/restoreAccessibility" android:text="KHÔI PHỤC DỊCH VỤ TRỢ NĂNG" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/shizuku" android:text="1. Cấp quyền Shizuku" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_glass_button"/>
+            <Button android:id="@+id/overlay" android:text="2. Cấp quyền cửa sổ nổi" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_glass_button"/>
+            <Button android:id="@+id/accessibility" android:text="3. BẬT TRỢ NĂNG MACRO SHIZUKU" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_glass_button"/>
+            <Button android:id="@+id/vneidMode" android:text="CHẾ ĐỘ VNeID: ẨN DỊCH VỤ TRỢ NĂNG" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_glass_button"/>
+            <Button android:id="@+id/restoreAccessibility" android:text="KHÔI PHỤC DỊCH VỤ TRỢ NĂNG" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_glass_button"/>
             <TextView android:text="Chế độ VNeID sẽ vô hiệu hóa thành phần dịch vụ trợ năng của Macro Shizuku để ứng dụng khác không liệt kê dịch vụ này. Macro và ghi chạm sẽ tạm ngừng cho đến khi khôi phục và bật lại trợ năng." android:textColor="#F6C66A" android:textSize="12sp" android:paddingTop="6dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         </LinearLayout>
         <LinearLayout android:orientation="vertical" android:padding="14dp" android:layout_marginTop="12dp"
@@ -33,7 +33,7 @@
             <CheckBox android:id="@+id/hotkeyEnabled" android:text="Bật phím tắt âm lượng" android:textColor="#F4F7FF" android:buttonTint="#42D9F5" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <TextView android:text="Volume Up: chạy macro đã chọn một lần\nVolume Down: dừng tất cả (khi ghi: kết thúc ghi)" android:textColor="#AFC0E2" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <Spinner android:id="@+id/hotkeyMacro" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-            <Button android:id="@+id/saveHotkey" android:text="Lưu phím tắt" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/saveHotkey" android:text="Lưu phím tắt" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_glass_button"/>
         </LinearLayout>
         <LinearLayout android:orientation="vertical" android:padding="14dp" android:layout_marginTop="12dp"
             android:background="@drawable/bg_panel" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -44,8 +44,8 @@
             <Spinner android:id="@+id/loops" android:entries="@array/loops" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <TextView android:text="Lưu ý: Ghi chạm trên Android 14 có thể chặn thao tác trên ứng dụng đích trong lúc ghi." android:textColor="#F6C66A" android:textSize="12sp" android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
-                <Button android:id="@+id/record" android:text="● GHI" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-                <Button android:id="@+id/stop" android:text="■ LƯU" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <Button android:id="@+id/record" android:text="● GHI" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_glass_button"/>
+                <Button android:id="@+id/stop" android:text="■ LƯU" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_glass_button"/>
             </LinearLayout>
         </LinearLayout>
         <LinearLayout android:orientation="vertical" android:padding="14dp" android:layout_marginTop="12dp"
@@ -57,15 +57,15 @@
             <SeekBar android:id="@+id/floatWidth" android:max="352" android:progress="24" android:progressTint="#42D9F5" android:thumbTint="#42D9F5" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <TextView android:id="@+id/floatAlphaText" android:text="Độ trong suốt: 85%" android:textColor="#F4F7FF" android:paddingTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <SeekBar android:id="@+id/floatAlpha" android:max="100" android:progress="85" android:progressTint="#42D9F5" android:thumbTint="#42D9F5" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-            <Button android:id="@+id/floatColor" android:text="🎨 Chọn màu nút macro" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/floatColor" android:text="🎨 Chọn màu nút macro" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_glass_button"/>
             <TextView android:text="Áp dụng cho nút macro nổi. Chiều cao và chiều rộng đều có thể chỉnh từ 48–400 dp." android:textColor="#8292B2" android:textSize="11sp" android:paddingTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         </LinearLayout>
-        <Button android:id="@+id/floatBtn" android:text="Hiện / làm mới nút nổi" android:layout_marginTop="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        <Button android:id="@+id/floatBtn" android:text="Hiện / làm mới nút nổi" android:layout_marginTop="12dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_glass_button"/>
         <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
-            <Button android:id="@+id/exportBtn" android:text="Xuất backup" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <Button android:id="@+id/importBtn" android:text="Nhập backup" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            <Button android:id="@+id/exportBtn" android:text="Xuất backup" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_glass_button"/>
+            <Button android:id="@+id/importBtn" android:text="Nhập backup" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_glass_button"/>
         </LinearLayout>
-        <Button android:id="@+id/stopAll" android:text="⛔ STOP ALL" android:textColor="#F2FBFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        <Button android:id="@+id/stopAll" android:text="⛔ STOP ALL" android:textColor="#F2FBFF" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_glass_button"/>
         <TextView android:text="MACRO ĐÃ LƯU" android:textColor="#F4F7FF" android:textStyle="bold" android:textSize="18sp" android:paddingTop="20dp" android:paddingBottom="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         <LinearLayout android:id="@+id/macroList" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         <TextView android:text="Macro Shizuku • V3" android:textColor="#637493" android:textSize="11sp" android:gravity="center" android:paddingTop="20dp" android:paddingBottom="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
