@@ -48,6 +48,8 @@ public class TouchRecordService extends AccessibilityService {
     private static volatile long lastHotkeyDispatchMs = 0;
     private static volatile long consumeVolumeDownUntilMs = 0;
     private static Toast stopRecordingToast;
+    private android.view.View stopOverlay;
+    private final android.os.Handler stopOverlayHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private static volatile int lastHotkeyDispatchCode = 0;
 
     private static final class TouchDevice {
@@ -346,6 +348,8 @@ public class TouchRecordService extends AccessibilityService {
 
     @Override public void onDestroy() {
         endRecording();
+        stopOverlayHandler.removeCallbacksAndMessages(null);
+        if (stopOverlay != null) { try { ((WindowManager)getSystemService(WINDOW_SERVICE)).removeView(stopOverlay); } catch (Exception ignored) {} stopOverlay = null; }
         stopHotkeyMonitor();
         if (instance == this) instance = null;
         super.onDestroy();
@@ -419,19 +423,29 @@ public class TouchRecordService extends AccessibilityService {
     }
 
     private void showRecordingStoppedMessage(String message) {
-        android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
-        main.post(() -> {
+        stopOverlayHandler.post(() -> {
             try {
-                if (stopRecordingToast != null) stopRecordingToast.cancel();
-                stopRecordingToast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG);
-                stopRecordingToast.show();
-                android.util.Log.i("TouchRecordService", "Shown recording stop message: " + message);
+                WindowManager manager = (WindowManager)getSystemService(WINDOW_SERVICE);
+                if (stopOverlay != null) { try { manager.removeView(stopOverlay); } catch (Exception ignored) {} stopOverlay = null; }
+                android.widget.TextView banner = new android.widget.TextView(this);
+                banner.setText(message); banner.setTextColor(android.graphics.Color.WHITE); banner.setTextSize(14);
+                banner.setGravity(android.view.Gravity.CENTER); banner.setPadding(24, 16, 24, 16);
+                android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+                bg.setColor(0xEE173B5E); bg.setCornerRadius(36); bg.setStroke(2, 0xFF55CFFF); banner.setBackground(bg);
+                WindowManager.LayoutParams lp = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    android.graphics.PixelFormat.TRANSLUCENT);
+                lp.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL; lp.y = 72;
+                manager.addView(banner, lp); stopOverlay = banner;
+                stopOverlayHandler.postDelayed(() -> { if (stopOverlay == banner) { try { manager.removeView(banner); } catch (Exception ignored) {} stopOverlay = null; } }, 4500);
+                android.util.Log.i("TouchRecordService", "Shown accessibility overlay stop message: " + message);
             } catch (Exception e) {
-                android.util.Log.e("TouchRecordService", "Unable to show recording stop message", e);
+                android.util.Log.e("TouchRecordService", "Unable to show accessibility overlay stop message", e);
+                try { if (stopRecordingToast != null) stopRecordingToast.cancel(); stopRecordingToast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG); stopRecordingToast.show(); } catch (Exception ignored) {}
             }
         });
     }
-
     @Override public boolean onKeyEvent(KeyEvent e) {
         int code = e.getKeyCode();
         if (code != KeyEvent.KEYCODE_VOLUME_UP && code != KeyEvent.KEYCODE_VOLUME_DOWN) return false;
