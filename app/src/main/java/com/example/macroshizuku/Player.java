@@ -15,7 +15,7 @@ public final class Player {
         stop(m.id);
         if(m.actions==null||m.actions.isEmpty()){Toast.makeText(c.getApplicationContext(),"Macro chưa có thao tác.",Toast.LENGTH_SHORT).show();return;}
         if(!ShizukuShell.ready()){Toast.makeText(c.getApplicationContext(),"Shizuku chưa chạy hoặc chưa được cấp quyền.",Toast.LENGTH_SHORT).show();return;}
-        final float speed=Math.max(.25f,Math.min(4f,m.speed));
+        final float speed=Math.max(.25f,Math.min(10f,m.speed));
         Thread t=new Thread(()->{
             try{
                 int loops=requestedLoops<=0?Integer.MAX_VALUE:requestedLoops;
