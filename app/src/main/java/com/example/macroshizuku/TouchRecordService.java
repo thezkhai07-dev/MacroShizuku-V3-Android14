@@ -118,13 +118,18 @@ public class TouchRecordService extends AccessibilityService {
             float[] b = mapped(p.x, p.y);
             long delay = lastAction == 0 ? 0 : Math.max(0, p.downTime - lastAction);
             long duration = Math.max(1, now - p.downTime);
+            String actionType = Math.hypot((b[0] - a[0]) * (width - 1), (b[1] - a[1]) * (height - 1)) < 12 ? "tap" : "swipe";
             synchronized (actions) {
-                if (Math.hypot((b[0] - a[0]) * (width - 1), (b[1] - a[1]) * (height - 1)) < 12) {
+                if ("tap".equals(actionType)) {
                     actions.add(new MacroStore.Action("tap", a[0], a[1], a[0], a[1], delay, duration));
                 } else {
                     actions.add(new MacroStore.Action("swipe", a[0], a[1], b[0], b[1], delay, Math.max(60, duration)));
                 }
             }
+            android.util.Log.i("TouchRecordService", "RECORDED " + actionType
+                + " raw=(" + p.startX + "," + p.startY + ")->(" + p.x + "," + p.y + ")"
+                + " normalized=(" + a[0] + "," + a[1] + ")->(" + b[0] + "," + b[1] + ")"
+                + " display=" + width + "x" + height + " rotation=" + rotation);
             lastAction = now;
             p.active = false;
             p.pendingDown = false;
@@ -285,7 +290,9 @@ public class TouchRecordService extends AccessibilityService {
                 touchThread.start();
                 android.util.Log.i("TouchRecordService", "Touch recording started: " + device.name + " " + device.path
                     + " rawX=" + device.minX + ".." + device.maxX + " rawY=" + device.minY + ".." + device.maxY
-                    + " display=" + screenW + "x" + screenH + " rotation=" + displayRotation);
+                    + " display=" + screenW + "x" + screenH + " rotation=" + displayRotation
+                    + " rawRangeX=" + device.minX + ".." + device.maxX
+                    + " rawRangeY=" + device.minY + ".." + device.maxY);
                 return true;
             } catch (Exception e) {
                 recording = false;
