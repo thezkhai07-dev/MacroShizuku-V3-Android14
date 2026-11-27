@@ -110,7 +110,7 @@ public class TouchRecordService extends AccessibilityService {
             long delay = lastAction == 0 ? 0 : Math.max(0, p.downTime - lastAction);
             long duration = Math.max(1, now - p.downTime);
             synchronized (actions) {
-                if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 12) {
+                if (Math.hypot((b[0] - a[0]) * (width - 1), (b[1] - a[1]) * (height - 1)) < 12) {
                     actions.add(new MacroStore.Action("tap", a[0], a[1], a[0], a[1], delay, duration));
                 } else {
                     actions.add(new MacroStore.Action("swipe", a[0], a[1], b[0], b[1], delay, Math.max(60, duration)));
