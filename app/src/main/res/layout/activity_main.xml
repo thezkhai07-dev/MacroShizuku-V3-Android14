@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="#0B1020" android:fillViewport="true">
+    android:background="@drawable/bg_screen" android:fillViewport="true">
     <LinearLayout android:orientation="vertical" android:padding="18dp"
         android:layout_width="match_parent" android:layout_height="wrap_content">
-        <TextView android:text="MACRO SHIZUKU" android:textColor="#F4F7FF"
-            android:textSize="27sp" android:textStyle="bold" android:letterSpacing="0.06"
+        <TextView android:text="Macro By Nhật ĐZ" android:textColor="#F4F7FF"
+            android:textSize="29sp" android:textStyle="bold" android:letterSpacing="0.06"
             android:layout_width="match_parent" android:layout_height="wrap_content"/>
-        <TextView android:text="AUTOMATION • MULTI MACRO • ANDROID 14+"
+        <TextView android:text="ĐIỀU KHIỂN MACRO • SHIZUKU • ANDROID 14+"
             android:textColor="#42D9F5" android:textSize="11sp" android:textStyle="bold"
             android:paddingBottom="18dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
         <LinearLayout android:orientation="vertical" android:padding="14dp"
