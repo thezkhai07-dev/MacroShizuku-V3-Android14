@@ -23,7 +23,7 @@ public class FloatingService extends Service {
     private int withAlpha(int color,int percent){return (color&0x00FFFFFF)|(clamp(percent,0,100)*255/100<<24);}
     private int macroColor(){return prefs().getInt("color",0xFF202F4A);}
     private int menuSize(){return clamp(prefs().getInt("menu_size",56),36,120);}
-    private int menuAlpha(){return clamp(prefs().getInt("menu_alpha",90),10,100);}
+    private int menuAlpha(){return clamp(prefs().getInt("menu_alpha",90),0,100);}
     private boolean recording(){return TouchRecordService.recording;}
     @Override public void onCreate(){super.onCreate();isRunning=true;wm=(WindowManager)getSystemService(WINDOW_SERVICE);migrateOldFloatingButtons();refresh();}
     private void migrateOldFloatingButtons(){
@@ -175,7 +175,7 @@ public class FloatingService extends Service {
         List<MacroStore.Action> captured=TouchRecordService.endRecording();
         if(captured==null||captured.isEmpty()){Toast.makeText(this,"Bản ghi chưa có thao tác nào, chưa lưu.",Toast.LENGTH_LONG).show();refresh();return;}
         MacroStore.Macro m=new MacroStore.Macro("m"+System.currentTimeMillis(),"Macro "+(MacroStore.all(this).size()+1));
-        m.actions=captured;m.speed=1f;m.loops=1;m.floating=true;
+        m.actions=captured;m.speed=1f;m.loops=1;m.floating=false;
         MacroStore.add(this,m);TouchRecordService.clearPendingCapture();
         Toast.makeText(this,"Đã lưu "+m.name+" • "+captured.size()+" thao tác.",Toast.LENGTH_LONG).show();
         refresh();
