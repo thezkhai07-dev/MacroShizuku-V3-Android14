@@ -18,17 +18,14 @@ public final class Player {
         if(m.actions==null||m.actions.isEmpty()){Toast.makeText(c.getApplicationContext(),"Macro chưa có thao tác.",Toast.LENGTH_SHORT).show();return;}
         if(!ShizukuShell.ready()){Toast.makeText(c.getApplicationContext(),"Shizuku chưa chạy hoặc chưa được cấp quyền.",Toast.LENGTH_SHORT).show();return;}
         final float speed=Math.max(.25f,Math.min(10f,m.speed));
-        final int displayW,displayH;
+        DisplayMetrics displayMetrics=new DisplayMetrics();
         try{
             WindowManager wm=(WindowManager)c.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-            DisplayMetrics dm=new DisplayMetrics();
-            if(wm!=null)wm.getDefaultDisplay().getRealMetrics(dm);
-            else dm.setTo(c.getResources().getDisplayMetrics());
-            displayW=Math.max(1,dm.widthPixels);displayH=Math.max(1,dm.heightPixels);
-        }catch(Exception e){
-            DisplayMetrics dm=c.getResources().getDisplayMetrics();
-            displayW=Math.max(1,dm.widthPixels);displayH=Math.max(1,dm.heightPixels);
-        }
+            if(wm!=null)wm.getDefaultDisplay().getRealMetrics(displayMetrics);
+            else displayMetrics.setTo(c.getResources().getDisplayMetrics());
+        }catch(Exception e){displayMetrics.setTo(c.getResources().getDisplayMetrics());}
+        final int displayW=Math.max(1,displayMetrics.widthPixels);
+        final int displayH=Math.max(1,displayMetrics.heightPixels);
         Thread t=new Thread(()->{
             try{
                 int loops=requestedLoops<=0?Integer.MAX_VALUE:requestedLoops;
