@@ -115,9 +115,12 @@ public class MainActivity extends Activity {
         setStatus(R.id.statusShizuku,"SHIZUKU",Shizuku.pingBinder() && Shizuku.checkSelfPermission()==PackageManager.PERMISSION_GRANTED);
         setStatus(R.id.statusOverlay,"CỬA SỔ NỔI",Settings.canDrawOverlays(this));
         String enabled=Settings.Secure.getString(getContentResolver(),Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-        String component=getPackageName()+"/"+TouchRecordService.class.getName();
+        ComponentName target=new ComponentName(this,TouchRecordService.class);
         boolean accessibility=false;
-        if(enabled!=null)for(String item:enabled.split(":")){ComponentName cn=ComponentName.unflattenFromString(item);if(cn!=null && component.equals(cn.flattenToString())){accessibility=true;break;}}
+        if(enabled!=null)for(String item:enabled.split(":")){
+            ComponentName current=ComponentName.unflattenFromString(item.trim());
+            if(current!=null && current.equals(target)){accessibility=true;break;}
+        }
         setStatus(R.id.statusAccessibility,"TRỢ NĂNG",accessibility);
     }
     private void setStatus(int id,String label,boolean enabled){
@@ -158,7 +161,7 @@ public class MainActivity extends Activity {
                 MacroStore.upsert(this,m);toast("Đã cập nhật thao tác "+(index+1));refresh();
             }catch(Exception ex){toast("Giá trị không hợp lệ. Hãy kiểm tra tọa độ và thời gian.");}}).setNegativeButton("Hủy",null).show();
     }
-    private Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(12);b.setMinWidth(0);b.setPadding(3,0,3,0);b.setAllCaps(false);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF173B63));b.setTextColor(0xFFEAF7FF);return b;}
+    private Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(12);b.setMinWidth(0);b.setPadding(3,0,3,0);b.setAllCaps(false);b.setBackgroundResource(R.drawable.bg_glass_button);b.setTextColor(0xFFEAF7FF);return b;}
     private LinearLayout buttonRow(Button... items){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);for(Button b:items){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f);p.setMargins(3,2,3,2);row.addView(b,p);}return row;}
     private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.floating=m.floating;c.buttonWidth=m.buttonWidth;c.buttonHeight=m.buttonHeight;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
     private void editMacro(MacroStore.Macro m){
