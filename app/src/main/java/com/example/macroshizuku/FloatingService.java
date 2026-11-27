@@ -148,8 +148,8 @@ public class FloatingService extends Service {
         });
     }
     private void showMenuPanel(){
-        LinearLayout root=vertical();root.setPadding(dp(12),dp(10),dp(12),dp(10));root.setBackground(rounded(0xFF101D31,96));
-        TextView heading=label("☰  MACRO CONTROL  •  KÉO ĐỂ DI CHUYỂN");heading.setTextSize(15);heading.setTypeface(null,1);heading.setBackground(rounded(0xFF294D72,90));root.addView(heading);
+        LinearLayout content=vertical();content.setPadding(dp(8),dp(6),dp(8),dp(6));content.setBackground(rounded(0xFF101D31,96));
+        TextView heading=label("☰  MENU MACRO  •  KÉO TẠI ĐÂY");heading.setTextSize(13);heading.setTypeface(null,1);heading.setPadding(dp(4),dp(4),dp(4),dp(4));heading.setBackground(rounded(0xFF294D72,90));content.addView(heading);
         LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);
         Button record=actionButton(recording()?"■ ĐANG GHI":"● GHI");Button save=actionButton("■ DỪNG & LƯU");actions.addView(record,new LinearLayout.LayoutParams(0,-2,1));actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));root.addView(actions);
         record.setOnClickListener(v->{
@@ -185,9 +185,12 @@ public class FloatingService extends Service {
         Button close=actionButton("ĐÓNG MENU");root.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
         int defaultX=prefs().getInt("menux",20)+dp(menuSize())+dp(8);
         int defaultY=prefs().getInt("menuy",dp(120));
+        ScrollView panelScroll=new ScrollView(this);panelScroll.setFillViewport(true);panelScroll.setClipToPadding(false);panelScroll.addView(content);
+        int screenHeight=getResources().getDisplayMetrics().heightPixels;
+        int maxPanelHeight=Math.max(dp(240),Math.min(dp(560),(int)(screenHeight*0.82f)));
         WindowManager.LayoutParams p=params(prefs().getInt("menu_panel_x",defaultX),prefs().getInt("menu_panel_y",defaultY));
-        p.width=dp(300);p.height=-2;p.flags|=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-        menuPanel=root;addView(root,p);makePanelDraggable(heading,root);
+        p.width=dp(276);p.height=maxPanelHeight;p.flags|=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+        menuPanel=panelScroll;addView(panelScroll,p);makePanelDraggable(heading,panelScroll);
     }
     private void applyMenuIconStyle(){
         if(menuIconView==null)return;
