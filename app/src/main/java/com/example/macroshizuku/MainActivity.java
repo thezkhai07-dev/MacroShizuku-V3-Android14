@@ -5,7 +5,7 @@ import android.app.*;import android.content.*;import android.content.pm.PackageM
 public class MainActivity extends Activity {
     LinearLayout list; EditText name; SeekBar speed; TextView speedText; Spinner loops, hotkeyMacro; CheckBox hotkeyEnabled; static final int REQ=77, EXPORT=91, IMPORT=92;
     private final Shizuku.OnRequestPermissionResultListener permissionListener=(requestCode,grantResult)->runOnUiThread(()->{
-        if(requestCode==REQ){if(grantResult==0)toast("Đã cấp quyền Shizuku.");else toast("Bạn chưa cấp quyền Shizuku.");}
+        if(requestCode==REQ){if(grantResult==0)toast("Đã cấp quyền Shizuku.");else toast("Bạn chưa cấp quyền Shizuku.");updateStatusIndicators();}
     });
     @Override public void onCreate(Bundle b){super.onCreate(b);Shizuku.addRequestPermissionResultListener(permissionListener);setContentView(R.layout.activity_main);
         list=findViewById(R.id.macroList);name=findViewById(R.id.name);speed=findViewById(R.id.speed);speedText=findViewById(R.id.speedText);loops=findViewById(R.id.loops);hotkeyMacro=findViewById(R.id.hotkeyMacro);hotkeyEnabled=findViewById(R.id.hotkeyEnabled);
@@ -111,7 +111,21 @@ public class MainActivity extends Activity {
     }
     private void saveHotkeys(){String id="";int pos=hotkeyMacro.getSelectedItemPosition();List<MacroStore.Macro> ms=MacroStore.all(this);if(pos>=0&&pos<ms.size())id=ms.get(pos).id;getSharedPreferences("hotkeys",MODE_PRIVATE).edit().putBoolean("enabled",hotkeyEnabled.isChecked()).putString("selected_id",id).apply();toast("Đã lưu: Volume Up = chạy 1 lần • Volume Down = STOP ALL (trừ khi đang ghi)");}
     private int loopValue(){int p=loops.getSelectedItemPosition();return p==0?1:p==1?5:p==2?10:0;}
-    private void refresh(){list.removeAllViews();List<MacroStore.Macro> ms=MacroStore.all(this);String selected=getSharedPreferences("hotkeys",MODE_PRIVATE).getString("selected_id","");ArrayList<String> names=new ArrayList<>();for(MacroStore.Macro m:ms)names.add(m.name);hotkeyMacro.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,names));for(int i=0;i<ms.size();i++)if(ms.get(i).id.equals(selected))hotkeyMacro.setSelection(i);if(ms.isEmpty()){TextView e=new TextView(this);e.setText("Chưa có macro. Bấm Ghi macro để tạo macro đầu tiên.");e.setPadding(8,24,8,24);list.addView(e);return;}for(MacroStore.Macro m:ms){LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(12,12,12,12);card.setBackgroundColor(0xFF172238);TextView t=new TextView(this);t.setText(m.name+"\n"+String.format(Locale.US,"%.2fx",m.speed)+" • "+(m.loops==0?"∞":m.loops)+" lần • "+m.actions.size()+" bước");t.setTextSize(16);t.setTextColor(0xFFF4F7FF);card.addView(t);Button play=btn("▶ Chạy");Button stop=btn("■ Dừng");Button edit=btn("Sửa");Button steps=btn("Bước");Button clone=btn("Nhân bản");Button del=btn("Xóa");card.addView(buttonRow(play,stop,edit));card.addView(buttonRow(steps,clone,del));list.addView(card);play.setOnClickListener(v->Player.play(this,m));stop.setOnClickListener(v->Player.stop(m.id));edit.setOnClickListener(v->editMacro(m));steps.setOnClickListener(v->editActions(m));clone.setOnClickListener(v->{MacroStore.Macro c=copy(m);c.id="m"+System.currentTimeMillis();c.name=m.name+" copy";MacroStore.add(this,c);refresh();});del.setOnClickListener(v->{new AlertDialog.Builder(this).setTitle("Xóa macro?").setMessage(m.name).setPositiveButton("Xóa",(d,w)->{Player.stop(m.id);MacroStore.delete(this,m.id);refresh();}).setNegativeButton("Hủy",null).show();});}}
+    private void updateStatusIndicators(){
+        setStatus(R.id.statusShizuku,"SHIZUKU",Shizuku.pingBinder() && Shizuku.checkSelfPermission()==PackageManager.PERMISSION_GRANTED);
+        setStatus(R.id.statusOverlay,"CỬA SỔ NỔI",Settings.canDrawOverlays(this));
+        String enabled=Settings.Secure.getString(getContentResolver(),Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        String component=getPackageName()+"/"+TouchRecordService.class.getName();
+        boolean accessibility=false;
+        if(enabled!=null)for(String item:enabled.split(":")){ComponentName cn=ComponentName.unflattenFromString(item);if(cn!=null && component.equals(cn.flattenToString())){accessibility=true;break;}}
+        setStatus(R.id.statusAccessibility,"TRỢ NĂNG",accessibility);
+    }
+    private void setStatus(int id,String label,boolean enabled){
+        TextView v=findViewById(id);if(v==null)return;
+        v.setText((enabled?"●":"●")+"  "+label+": "+(enabled?"ĐÃ BẬT":"CHƯA BẬT"));
+        v.setTextColor(enabled?0xFF42E6A4:0xFFFF718B);
+    }
+    private void refresh(){updateStatusIndicators();list.removeAllViews();List<MacroStore.Macro> ms=MacroStore.all(this);String selected=getSharedPreferences("hotkeys",MODE_PRIVATE).getString("selected_id","");ArrayList<String> names=new ArrayList<>();for(MacroStore.Macro m:ms)names.add(m.name);hotkeyMacro.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,names));for(int i=0;i<ms.size();i++)if(ms.get(i).id.equals(selected))hotkeyMacro.setSelection(i);if(ms.isEmpty()){TextView e=new TextView(this);e.setText("Chưa có macro. Bấm Ghi macro để tạo macro đầu tiên.");e.setPadding(8,24,8,24);list.addView(e);return;}for(MacroStore.Macro m:ms){LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(12,12,12,12);card.setBackgroundResource(R.drawable.bg_panel);TextView t=new TextView(this);t.setText(m.name+"\n"+String.format(Locale.US,"%.2fx",m.speed)+" • "+(m.loops==0?"∞":m.loops)+" lần • "+m.actions.size()+" bước");t.setTextSize(16);t.setTextColor(0xFFF4F7FF);card.addView(t);Button play=btn("▶ Chạy");Button stop=btn("■ Dừng");Button edit=btn("Sửa");Button steps=btn("Bước");Button clone=btn("Nhân bản");Button del=btn("Xóa");card.addView(buttonRow(play,stop,edit));card.addView(buttonRow(steps,clone,del));list.addView(card);play.setOnClickListener(v->Player.play(this,m));stop.setOnClickListener(v->Player.stop(m.id));edit.setOnClickListener(v->editMacro(m));steps.setOnClickListener(v->editActions(m));clone.setOnClickListener(v->{MacroStore.Macro c=copy(m);c.id="m"+System.currentTimeMillis();c.name=m.name+" copy";MacroStore.add(this,c);refresh();});del.setOnClickListener(v->{new AlertDialog.Builder(this).setTitle("Xóa macro?").setMessage(m.name).setPositiveButton("Xóa",(d,w)->{Player.stop(m.id);MacroStore.delete(this,m.id);refresh();}).setNegativeButton("Hủy",null).show();});}}
     private void editActions(MacroStore.Macro m){
         if(m.actions==null||m.actions.isEmpty()){toast("Macro chưa có thao tác.");return;}
         String[] labels=new String[m.actions.size()];
@@ -144,7 +158,7 @@ public class MainActivity extends Activity {
                 MacroStore.upsert(this,m);toast("Đã cập nhật thao tác "+(index+1));refresh();
             }catch(Exception ex){toast("Giá trị không hợp lệ. Hãy kiểm tra tọa độ và thời gian.");}}).setNegativeButton("Hủy",null).show();
     }
-    private Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(12);b.setMinWidth(0);b.setPadding(3,0,3,0);b.setAllCaps(false);return b;}
+    private Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(12);b.setMinWidth(0);b.setPadding(3,0,3,0);b.setAllCaps(false);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF173B63));b.setTextColor(0xFFEAF7FF);return b;}
     private LinearLayout buttonRow(Button... items){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);for(Button b:items){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f);p.setMargins(3,2,3,2);row.addView(b,p);}return row;}
     private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.floating=m.floating;c.buttonWidth=m.buttonWidth;c.buttonHeight=m.buttonHeight;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
     private void editMacro(MacroStore.Macro m){
