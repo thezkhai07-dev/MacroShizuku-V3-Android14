@@ -263,7 +263,7 @@ public class TouchRecordService extends AccessibilityService {
         TouchDevice best = null;
         int bestScore = -1;
         Pattern pathPattern = Pattern.compile("(/dev/input/event\\d+)");
-        Pattern namePattern = Pattern.compile("name:\\s*\\"([^\\"]*)\\"");
+        Pattern namePattern = Pattern.compile("name:\\s*\\x22([^\\x22]*)\\x22");
         Pattern mtX = Pattern.compile("ABS_MT_POSITION_X\\s*:\\s*value\\s+-?\\d+,\\s*min\\s+(-?\\d+),\\s*max\\s+(-?\\d+)");
         Pattern mtY = Pattern.compile("ABS_MT_POSITION_Y\\s*:\\s*value\\s+-?\\d+,\\s*min\\s+(-?\\d+),\\s*max\\s+(-?\\d+)");
         Pattern absX = Pattern.compile("ABS_X\\s*:\\s*value\\s+-?\\d+,\\s*min\\s+(-?\\d+),\\s*max\\s+(-?\\d+)");
