@@ -12,6 +12,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 import android.util.DisplayMetrics;
+import android.widget.Toast;
 import android.view.accessibility.AccessibilityEvent;
 
 import java.io.BufferedReader;
@@ -395,7 +396,15 @@ public class TouchRecordService extends AccessibilityService {
         boolean enabled = prefs.getBoolean("enabled", false);
         android.util.Log.i("TouchRecordService", "Volume hotkey: code=" + code + ", source=" + source + ", recording=" + recording + ", enabled=" + enabled);
         if (recording) {
-            if (code == KeyEvent.KEYCODE_VOLUME_DOWN) endRecording();
+            if (code == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                List<MacroStore.Action> stopped = endRecording();
+                int count = stopped == null ? 0 : stopped.size();
+                String message = count > 0
+                    ? "Đã dừng ghi macro • " + count + " thao tác. Quay lại app và nhấn LƯU."
+                    : "Đã dừng ghi macro nhưng chưa có thao tác nào. Hãy ghi lại rồi nhấn GIẢM ÂM LƯỢNG.";
+                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+                android.util.Log.i("TouchRecordService", "Recording stopped by Volume Down; captured actions=" + count);
+            }
             return;
         }
         if (!enabled) return;
