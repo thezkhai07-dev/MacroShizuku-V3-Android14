@@ -15,7 +15,20 @@ public class FloatingService extends Service {
     private void refresh(){for(View v:views)try{wm.removeView(v);}catch(Exception ignored){}views.clear();int y=80;if(!collapsed){List<MacroStore.Macro> ms=MacroStore.all(this);for(MacroStore.Macro m:ms)if(m.floating){addMacro(m,y);int macroHeight=m.buttonHeight>0?Math.max(48,Math.min(400,m.buttonHeight)):buttonSize();y+=macroHeight+8;}}addToggle(collapsed?80:y+8);addLock(collapsed?140:y+8);}
     private WindowManager.LayoutParams params(int x,int y){int type=Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE;WindowManager.LayoutParams p=new WindowManager.LayoutParams(-2,-2,type,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,PixelFormat.TRANSLUCENT);p.gravity=Gravity.TOP|Gravity.START;p.x=x;p.y=y;return p;}
     private int withAlpha(int color,int percent){return (color&0x00FFFFFF)|((int)(255f*percent/100f)<<24);}
-    private android.graphics.drawable.GradientDrawable circle(int color){android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();d.setShape(android.graphics.drawable.GradientDrawable.OVAL);d.setColor(withAlpha(color,buttonAlpha()));d.setStroke(2,withAlpha(0xFF42D9F5,buttonAlpha()));return d;}
+    private int dp(float value){return (int)(value*getResources().getDisplayMetrics().density+0.5f);}
+    private android.graphics.drawable.GradientDrawable circle(int color){
+        android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();
+        d.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        int opacity=buttonAlpha();
+        d.setColors(new int[]{
+            withAlpha(color,opacity*58/100),
+            withAlpha(color,opacity*76/100),
+            withAlpha(color,opacity*64/100)
+        });
+        d.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+        d.setStroke(dp(1),withAlpha(0xFF79DFFF,opacity*28/100));
+        return d;
+    }
     private void addMacro(MacroStore.Macro m,int y){
         int size=m.buttonHeight>0?Math.max(48,Math.min(400,m.buttonHeight)):buttonSize();int width=m.buttonWidth>0?Math.max(48,Math.min(400,m.buttonWidth)):buttonWidth();TextView b=new TextView(this);b.setText(m.name);b.setTextColor(withAlpha(Color.WHITE,buttonAlpha()));b.setTextSize(10);b.setGravity(Gravity.CENTER);b.setMaxLines(3);b.setEllipsize(android.text.TextUtils.TruncateAt.END);b.setPadding(5,5,5,5);b.setBackground(circle(buttonColor()));
         b.setContentDescription(m.name+(m.loops==1?" - chạm để chạy một lần":" - giữ để chạy, thả để dừng"));
