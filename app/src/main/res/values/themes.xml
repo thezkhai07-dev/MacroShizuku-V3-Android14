@@ -1,5 +1,6 @@
 <resources>
     <style name="Theme.MacroShizuku" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="materialButtonStyle">@style/Widget.MacroShizuku.Button</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:statusBarColor">#0B1020</item>
@@ -7,5 +8,11 @@
         <item name="android:windowBackground">#0B1020</item>
         <item name="colorPrimary">#42D9F5</item>
         <item name="colorSecondary">#9B7BFF</item>
+    </style>
+    <style name="Widget.MacroShizuku.Button" parent="Widget.Material3.Button">
+        <item name="cornerRadius">16dp</item>
+        <item name="backgroundTint">#214D79</item>
+        <item name="android:textColor">#F2FBFF</item>
+        <item name="android:minHeight">48dp</item>
     </style>
 </resources>
