@@ -166,7 +166,11 @@ public class MainActivity extends Activity {
     private void editMacro(MacroStore.Macro m){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(30,10,30,10);
         EditText n=new EditText(this);n.setText(m.name);box.addView(n);
+        TextView speedLabel=new TextView(this);speedLabel.setTextColor(0xFFF4F7FF);speedLabel.setPadding(0,12,0,2);box.addView(speedLabel);
         SeekBar s=new SeekBar(this);s.setMax(1000);s.setProgress(Math.max(25,Math.min(1000,Math.round(m.speed*100))));box.addView(s);
+        Runnable updateSpeedLabel=()->speedLabel.setText(String.format(Locale.US,"Tốc độ macro: %.2fx",s.getProgress()/100f));
+        s.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){updateSpeedLabel.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
+        updateSpeedLabel.run();
         Spinner l=new Spinner(this);l.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"1 lần","5 lần","10 lần","Vô hạn"}));l.setSelection(m.loops==1?0:m.loops==5?1:m.loops==10?2:3);box.addView(l);
         CheckBox f=new CheckBox(this);f.setText("Hiện nút nổi cho macro này");f.setChecked(m.floating);box.addView(f);
         TextView widthLabel=new TextView(this);widthLabel.setTextColor(0xFFF4F7FF);box.addView(widthLabel);
