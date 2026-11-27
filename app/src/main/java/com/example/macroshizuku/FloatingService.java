@@ -151,7 +151,7 @@ public class FloatingService extends Service {
         LinearLayout content=vertical();content.setPadding(dp(8),dp(6),dp(8),dp(6));content.setBackground(rounded(0xFF101D31,96));
         TextView heading=label("☰  MENU MACRO  •  KÉO TẠI ĐÂY");heading.setTextSize(13);heading.setTypeface(null,1);heading.setPadding(dp(4),dp(4),dp(4),dp(4));heading.setBackground(rounded(0xFF294D72,90));content.addView(heading);
         LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);
-        Button record=actionButton(recording()?"■ ĐANG GHI":"● GHI");Button save=actionButton("■ DỪNG & LƯU");actions.addView(record,new LinearLayout.LayoutParams(0,-2,1));actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));root.addView(actions);
+        Button record=actionButton(recording()?"■ ĐANG GHI":"● GHI");Button save=actionButton("■ DỪNG & LƯU");actions.addView(record,new LinearLayout.LayoutParams(0,-2,1));actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));content.addView(actions);
         record.setOnClickListener(v->{
             if(recording()){Toast.makeText(this,"Đang ghi. Nhấn DỪNG & LƯU để kết thúc.",Toast.LENGTH_SHORT).show();return;}
             if(!ShizukuShell.ready()){Toast.makeText(this,"Hãy kết nối Shizuku Next và cấp quyền trước.",Toast.LENGTH_LONG).show();return;}
@@ -159,7 +159,7 @@ public class FloatingService extends Service {
             else Toast.makeText(this,TouchRecordService.getCaptureError(),Toast.LENGTH_LONG).show();
         });
         save.setOnClickListener(v->saveRecordingFromMenu());
-        root.addView(label("HIỂN THỊ VÀ TÙY CHỈNH TỪNG MACRO"));
+        content.addView(label("HIỂN THỊ VÀ TÙY CHỈNH TỪNG MACRO"));
         ScrollView scroll=new ScrollView(this);LinearLayout list=vertical();list.setPadding(0,0,0,dp(4));
         List<MacroStore.Macro> macros=MacroStore.all(this);
         if(macros.isEmpty())list.addView(label("Chưa có macro nào được lưu."));
@@ -178,11 +178,11 @@ public class FloatingService extends Service {
             addSpeedSlider(card,m);
             list.addView(card);
         }
-        scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(300)));
-        root.addView(label("ICON MENU NỔI"));
+        scroll.addView(list);content.addView(scroll,new LinearLayout.LayoutParams(-1,dp(170)));
+        content.addView(label("ICON MENU NỔI"));
         addSlider(root,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();applyMenuIconStyle();});
         addSlider(root,"Độ mờ icon",0,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
-        Button close=actionButton("ĐÓNG MENU");root.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
+        Button close=actionButton("ĐÓNG MENU");content.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
         int defaultX=prefs().getInt("menux",20)+dp(menuSize())+dp(8);
         int defaultY=prefs().getInt("menuy",dp(120));
         ScrollView panelScroll=new ScrollView(this);panelScroll.setFillViewport(true);panelScroll.setClipToPadding(false);panelScroll.addView(content);
