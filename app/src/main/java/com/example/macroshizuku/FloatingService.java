@@ -148,10 +148,10 @@ public class FloatingService extends Service {
         });
     }
     private void showMenuPanel(){
-        LinearLayout content=vertical();content.setPadding(dp(8),dp(6),dp(8),dp(6));content.setBackground(rounded(0xFF101D31,96));
-        TextView heading=label("☰  MENU MACRO  •  KÉO TẠI ĐÂY");heading.setTextSize(13);heading.setTypeface(null,1);heading.setPadding(dp(4),dp(4),dp(4),dp(4));heading.setBackground(rounded(0xFF294D72,90));content.addView(heading);
+        LinearLayout root=vertical();root.setPadding(dp(12),dp(10),dp(12),dp(10));root.setBackground(rounded(0xFF101D31,96));
+        TextView heading=label("☰  MACRO CONTROL  •  KÉO ĐỂ DI CHUYỂN");heading.setTextSize(13);heading.setTypeface(null,1);heading.setPadding(dp(4),dp(4),dp(4),dp(4));heading.setBackground(rounded(0xFF294D72,90));root.addView(heading);
         LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);
-        Button record=actionButton(recording()?"■ ĐANG GHI":"● GHI");Button save=actionButton("■ DỪNG & LƯU");actions.addView(record,new LinearLayout.LayoutParams(0,-2,1));actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));content.addView(actions);
+        Button record=actionButton(recording()?"■ ĐANG GHI":"● GHI");Button save=actionButton("■ DỪNG & LƯU");actions.addView(record,new LinearLayout.LayoutParams(0,-2,1));actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));root.addView(actions);
         record.setOnClickListener(v->{
             if(recording()){Toast.makeText(this,"Đang ghi. Nhấn DỪNG & LƯU để kết thúc.",Toast.LENGTH_SHORT).show();return;}
             if(!ShizukuShell.ready()){Toast.makeText(this,"Hãy kết nối Shizuku Next và cấp quyền trước.",Toast.LENGTH_LONG).show();return;}
@@ -159,15 +159,15 @@ public class FloatingService extends Service {
             else Toast.makeText(this,TouchRecordService.getCaptureError(),Toast.LENGTH_LONG).show();
         });
         save.setOnClickListener(v->saveRecordingFromMenu());
-        content.addView(label("HIỂN THỊ VÀ TÙY CHỈNH TỪNG MACRO"));
+        root.addView(label("HIỂN THỊ VÀ TÙY CHỈNH TỪNG MACRO"));
         ScrollView scroll=new ScrollView(this);LinearLayout list=vertical();list.setPadding(0,0,0,dp(4));
         List<MacroStore.Macro> macros=MacroStore.all(this);
         if(macros.isEmpty())list.addView(label("Chưa có macro nào được lưu."));
         for(MacroStore.Macro m:macros){
             LinearLayout card=vertical();card.setPadding(dp(8),dp(6),dp(8),dp(8));card.setBackground(rounded(0xFF21334C,88));
-            CheckBox visible=new CheckBox(this);visible.setText("Hiện: "+m.name);visible.setTextColor(Color.WHITE);visible.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF42D9F5));visible.setChecked(m.floating);card.addView(visible);
+            CheckBox visible=new CheckBox(this);visible.setText("Hiện: "+m.name);visible.setTextColor(Color.WHITE);visible.setButtonTintList(android.root.res.ColorStateList.valueOf(0xFF42D9F5));visible.setChecked(m.floating);card.addView(visible);
             visible.setOnCheckedChangeListener((button,checked)->{MacroStore.Macro latest=MacroStore.find(this,m.id);if(latest!=null){latest.floating=checked;MacroStore.upsert(this,latest);refresh();}});
-            CheckBox lock=new CheckBox(this);lock.setText("Khóa di chuyển");lock.setTextColor(Color.WHITE);lock.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF42D9F5));lock.setChecked(m.buttonLocked);card.addView(lock);
+            CheckBox lock=new CheckBox(this);lock.setText("Khóa di chuyển");lock.setTextColor(Color.WHITE);lock.setButtonTintList(android.root.res.ColorStateList.valueOf(0xFF42D9F5));lock.setChecked(m.buttonLocked);card.addView(lock);
             lock.setOnCheckedChangeListener((button,checked)->{MacroStore.Macro latest=MacroStore.find(this,m.id);if(latest!=null){latest.buttonLocked=checked;MacroStore.upsert(this,latest);refresh();}});
             int initialW=m.buttonWidth>0?m.buttonWidth:prefs().getInt("width",72);
             int initialH=m.buttonHeight>0?m.buttonHeight:prefs().getInt("size",72);
@@ -178,19 +178,16 @@ public class FloatingService extends Service {
             addSpeedSlider(card,m);
             list.addView(card);
         }
-        scroll.addView(list);content.addView(scroll,new LinearLayout.LayoutParams(-1,dp(170)));
-        content.addView(label("ICON MENU NỔI"));
-        addSlider(content,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();applyMenuIconStyle();});
-        addSlider(content,"Độ mờ icon",0,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
-        Button close=actionButton("ĐÓNG MENU");content.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
+        scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(300)));
+        root.addView(label("ICON MENU NỔI"));
+        addSlider(root,"Kích thước icon",36,120,menuSize()," dp",v->{prefs().edit().putInt("menu_size",v).apply();applyMenuIconStyle();});
+        addSlider(root,"Độ mờ icon",0,100,menuAlpha(),"%",v->{prefs().edit().putInt("menu_alpha",v).apply();applyMenuIconStyle();});
+        Button close=actionButton("ĐÓNG MENU");root.addView(close);close.setOnClickListener(v->{menuOpen=false;refresh();});
         int defaultX=prefs().getInt("menux",20)+dp(menuSize())+dp(8);
         int defaultY=prefs().getInt("menuy",dp(120));
-        ScrollView panelScroll=new ScrollView(this);panelScroll.setFillViewport(true);panelScroll.setClipToPadding(false);panelScroll.addView(content);
-        int screenHeight=getResources().getDisplayMetrics().heightPixels;
-        int maxPanelHeight=Math.max(dp(240),Math.min(dp(560),(int)(screenHeight*0.82f)));
         WindowManager.LayoutParams p=params(prefs().getInt("menu_panel_x",defaultX),prefs().getInt("menu_panel_y",defaultY));
-        p.width=dp(276);p.height=maxPanelHeight;p.flags|=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-        menuPanel=panelScroll;addView(panelScroll,p);makePanelDraggable(heading,panelScroll);
+        p.width=dp(300);p.height=-2;p.flags|=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+        menuPanel=root;addView(root,p);makePanelDraggable(heading,root);
     }
     private void applyMenuIconStyle(){
         if(menuIconView==null)return;
@@ -214,7 +211,7 @@ public class FloatingService extends Service {
         List<MacroStore.Action> captured=TouchRecordService.endRecording();
         if(captured==null||captured.isEmpty()){String msg="Bản ghi chưa có thao tác nào, chưa lưu.";Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();showOverlayMessage(msg);refresh();return;}
         MacroStore.Macro m=new MacroStore.Macro("m"+System.currentTimeMillis(),"Macro "+(MacroStore.all(this).size()+1));
-        m.actions=captured;m.speed=1f;m.loops=1;m.floating=false;
+        m.actions=captured;m.speed=1f;m.loops=1;m.floating=false;m.normalizedCoordinates=true;
         MacroStore.add(this,m);TouchRecordService.clearPendingCapture();
         String msg="Đã lưu "+m.name+" • "+captured.size()+" thao tác.";
         Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();showOverlayMessage(msg);
