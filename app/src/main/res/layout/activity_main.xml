@@ -10,6 +10,13 @@
         <TextView android:text="ĐIỀU KHIỂN MACRO • SHIZUKU • ANDROID 14+"
             android:textColor="#42D9F5" android:textSize="11sp" android:textStyle="bold"
             android:paddingBottom="18dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        <LinearLayout android:orientation="vertical" android:padding="15dp" android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_panel" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <TextView android:text="✦  TRẠNG THÁI HỆ THỐNG" android:textColor="#EAF7FF" android:textStyle="bold" android:textSize="14sp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/statusShizuku" android:text="●  SHIZUKU: ĐANG KIỂM TRA..." android:textColor="#AFC0E2" android:textStyle="bold" android:textSize="12sp" android:paddingTop="10dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/statusOverlay" android:text="●  CỬA SỔ NỔI: ĐANG KIỂM TRA..." android:textColor="#AFC0E2" android:textStyle="bold" android:textSize="12sp" android:paddingTop="7dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/statusAccessibility" android:text="●  TRỢ NĂNG: ĐANG KIỂM TRA..." android:textColor="#AFC0E2" android:textStyle="bold" android:textSize="12sp" android:paddingTop="7dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        </LinearLayout>
         <LinearLayout android:orientation="vertical" android:padding="14dp"
             android:background="@drawable/bg_panel" android:layout_width="match_parent" android:layout_height="wrap_content">
             <TextView android:text="THIẾT LẬP HỆ THỐNG" android:textColor="#AFC0E2" android:textStyle="bold" android:textSize="13sp" android:paddingBottom="6dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
