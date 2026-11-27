@@ -46,6 +46,8 @@ public class TouchRecordService extends AccessibilityService {
     private volatile Object hotkeyProcess;
     private volatile Thread hotkeyThread;
     private static volatile long lastHotkeyDispatchMs = 0;
+    private static volatile long consumeVolumeDownUntilMs = 0;
+    private static Toast stopRecordingToast;
     private static volatile int lastHotkeyDispatchCode = 0;
 
     private static final class TouchDevice {
@@ -397,12 +399,13 @@ public class TouchRecordService extends AccessibilityService {
         android.util.Log.i("TouchRecordService", "Volume hotkey: code=" + code + ", source=" + source + ", recording=" + recording + ", enabled=" + enabled);
         if (recording) {
             if (code == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                consumeVolumeDownUntilMs = SystemClock.elapsedRealtime() + 1200;
                 List<MacroStore.Action> stopped = endRecording();
                 int count = stopped == null ? 0 : stopped.size();
                 String message = count > 0
                     ? "Đã dừng ghi macro • " + count + " thao tác. Quay lại app và nhấn LƯU."
-                    : "Đã dừng ghi macro nhưng chưa có thao tác nào. Hãy ghi lại rồi nhấn GIẢM ÂM LƯỢNG.";
-                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+                    : "Đã dừng ghi macro nhưng chưa có thao tác nào. Hãy ghi lại rồi thử lại.";
+                showRecordingStoppedMessage(message);
                 android.util.Log.i("TouchRecordService", "Recording stopped by Volume Down; captured actions=" + count);
             }
             return;
@@ -412,10 +415,24 @@ public class TouchRecordService extends AccessibilityService {
         else if (code == KeyEvent.KEYCODE_VOLUME_DOWN) Player.stopAll();
     }
 
+    private void showRecordingStoppedMessage(String message) {
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            if (stopRecordingToast != null) stopRecordingToast.cancel();
+            stopRecordingToast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG);
+            stopRecordingToast.show();
+        });
+    }
+
     @Override public boolean onKeyEvent(KeyEvent e) {
         int code = e.getKeyCode();
         if (code != KeyEvent.KEYCODE_VOLUME_UP && code != KeyEvent.KEYCODE_VOLUME_DOWN) return false;
-        if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) dispatchVolumeHotkey(code, "Accessibility");
+        if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
+            if (recording && code == KeyEvent.KEYCODE_VOLUME_DOWN)
+                consumeVolumeDownUntilMs = SystemClock.elapsedRealtime() + 1200;
+            dispatchVolumeHotkey(code, "Accessibility");
+        }
+        if (code == KeyEvent.KEYCODE_VOLUME_DOWN &&
+            SystemClock.elapsedRealtime() <= consumeVolumeDownUntilMs) return true;
         SharedPreferences prefs = getSharedPreferences("hotkeys", MODE_PRIVATE);
         return recording || prefs.getBoolean("enabled", false);
     }
