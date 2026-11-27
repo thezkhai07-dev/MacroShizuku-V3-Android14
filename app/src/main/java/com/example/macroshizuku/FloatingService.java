@@ -165,9 +165,9 @@ public class FloatingService extends Service {
         if(macros.isEmpty())list.addView(label("Chưa có macro nào được lưu."));
         for(MacroStore.Macro m:macros){
             LinearLayout card=vertical();card.setPadding(dp(8),dp(6),dp(8),dp(8));card.setBackground(rounded(0xFF21334C,88));
-            CheckBox visible=new CheckBox(this);visible.setText("Hiện: "+m.name);visible.setTextColor(Color.WHITE);visible.setButtonTintList(android.root.res.ColorStateList.valueOf(0xFF42D9F5));visible.setChecked(m.floating);card.addView(visible);
+            CheckBox visible=new CheckBox(this);visible.setText("Hiện: "+m.name);visible.setTextColor(Color.WHITE);visible.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF42D9F5));visible.setChecked(m.floating);card.addView(visible);
             visible.setOnCheckedChangeListener((button,checked)->{MacroStore.Macro latest=MacroStore.find(this,m.id);if(latest!=null){latest.floating=checked;MacroStore.upsert(this,latest);refresh();}});
-            CheckBox lock=new CheckBox(this);lock.setText("Khóa di chuyển");lock.setTextColor(Color.WHITE);lock.setButtonTintList(android.root.res.ColorStateList.valueOf(0xFF42D9F5));lock.setChecked(m.buttonLocked);card.addView(lock);
+            CheckBox lock=new CheckBox(this);lock.setText("Khóa di chuyển");lock.setTextColor(Color.WHITE);lock.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF42D9F5));lock.setChecked(m.buttonLocked);card.addView(lock);
             lock.setOnCheckedChangeListener((button,checked)->{MacroStore.Macro latest=MacroStore.find(this,m.id);if(latest!=null){latest.buttonLocked=checked;MacroStore.upsert(this,latest);refresh();}});
             int initialW=m.buttonWidth>0?m.buttonWidth:prefs().getInt("width",72);
             int initialH=m.buttonHeight>0?m.buttonHeight:prefs().getInt("size",72);
