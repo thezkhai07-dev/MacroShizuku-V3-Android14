@@ -32,16 +32,15 @@ public class MainActivity extends Activity {
         findViewById(R.id.record).setOnClickListener(v->{
             String macroName=name.getText().toString().trim();
             if(macroName.isEmpty())macroName="Macro "+(MacroStore.all(this).size()+1);
-            if(Build.VERSION.SDK_INT<34){toast("Ghi chạm yêu cầu Android 14 trở lên.");return;}
-            if(!TouchRecordService.isConnected()){toast("Hãy bật Macro Shizuku trong cài đặt Trợ năng trước.");return;}
+            if(!ShizukuShell.ready()){toast("Hãy kết nối Shizuku Next và cấp quyền cho Macro By Nhật ĐZ trước.");return;}
             final String finalName=macroName;
-            new AlertDialog.Builder(this).setTitle("Lưu ý khi ghi macro")
-                .setMessage("Trong lúc ghi, Android sẽ chuyển quyền nhận cảm ứng cho dịch vụ Macro Shizuku. Vì vậy màn hình sẽ không thao tác được trong thời gian ghi. Nhấn Volume Down hoặc nút Dừng để kết thúc.")
+            new AlertDialog.Builder(this).setTitle("Ghi macro không khóa cảm ứng")
+                .setMessage("Macro By Nhật ĐZ sẽ đọc sự kiện cảm ứng qua Shizuku. Bạn vẫn có thể chạm, vuốt và sử dụng ứng dụng bình thường trong lúc ghi. Không cần bật Trợ năng để ghi. Nhấn nút Dừng trong app để kết thúc.")
                 .setPositiveButton("Bắt đầu ghi",(d,w)->{
-                    if(TouchRecordService.beginRecording()){
+                    if(TouchRecordService.beginRecording(this)){
                         name.setTag(finalName);
-                        toast("Đang ghi: "+finalName+" • Cảm ứng tạm khóa • Volume Down để kết thúc");
-                    }else toast(TouchRecordService.getCaptureError().isEmpty()?"Không bật được chế độ ghi chạm.":TouchRecordService.getCaptureError());
+                        toast("Đang ghi: "+finalName+" • Bạn vẫn dùng màn hình bình thường");
+                    }else toast(TouchRecordService.getCaptureError().isEmpty()?"Không khởi động được ghi cảm ứng.":TouchRecordService.getCaptureError());
                 }).setNegativeButton("Hủy",null).show();
         });
         findViewById(R.id.stop).setOnClickListener(v->{
