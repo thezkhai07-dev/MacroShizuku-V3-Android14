@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
         // Re-apply the user's VNeID choice whenever the app is opened.
         if(getSharedPreferences("compatibility",MODE_PRIVATE).getBoolean("vneid_mode",false))
             setVneidCompatibilityMode(true);
-        speed.setProgress(100);speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){float x=Math.max(.25f,p/100f);speedText.setText(String.format(Locale.US,"Tốc độ %.2fx",x));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
+        speed.setMax(1000);speed.setProgress(100);speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){float x=Math.max(.25f,p/100f);speedText.setText(String.format(Locale.US,"Tốc độ %.2fx",x));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
         findViewById(R.id.record).setOnClickListener(v->{
             String macroName=name.getText().toString().trim();
             if(macroName.isEmpty())macroName="Macro "+(MacroStore.all(this).size()+1);
@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
             String n=String.valueOf(name.getTag());
             if(n.equals("null")||n.trim().isEmpty())n="Macro "+(MacroStore.all(this).size()+1);
             MacroStore.Macro m=new MacroStore.Macro("m"+System.currentTimeMillis(),n);
-            m.speed=Math.max(.25f,speed.getProgress()/100f);m.loops=loopValue();m.actions=captured;m.floating=true;
+            m.speed=Math.max(.25f,Math.min(10f,speed.getProgress()/100f));m.loops=loopValue();m.actions=captured;m.floating=true;
             MacroStore.add(this,m);TouchRecordService.clearPendingCapture();toast("Đã lưu "+n+" • "+m.actions.size()+" thao tác");refresh();
         });
         findViewById(R.id.floatBtn).setOnClickListener(v->{if(!Settings.canDrawOverlays(this)){toast("Hãy cấp quyền cửa sổ nổi.");return;}startService(new Intent(this,FloatingService.class));});
@@ -166,7 +166,7 @@ public class MainActivity extends Activity {
     private void editMacro(MacroStore.Macro m){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(30,10,30,10);
         EditText n=new EditText(this);n.setText(m.name);box.addView(n);
-        SeekBar s=new SeekBar(this);s.setMax(400);s.setProgress(Math.round(m.speed*100));box.addView(s);
+        SeekBar s=new SeekBar(this);s.setMax(1000);s.setProgress(Math.max(25,Math.min(1000,Math.round(m.speed*100))));box.addView(s);
         Spinner l=new Spinner(this);l.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"1 lần","5 lần","10 lần","Vô hạn"}));l.setSelection(m.loops==1?0:m.loops==5?1:m.loops==10?2:3);box.addView(l);
         CheckBox f=new CheckBox(this);f.setText("Hiện nút nổi cho macro này");f.setChecked(m.floating);box.addView(f);
         TextView widthLabel=new TextView(this);widthLabel.setTextColor(0xFFF4F7FF);box.addView(widthLabel);
@@ -179,7 +179,7 @@ public class MainActivity extends Activity {
         updateDimensions.run();
         TextView hint=new TextView(this);hint.setText("Kích thước được lưu riêng cho macro này (48–400 dp).");hint.setTextColor(0xFF8292B2);box.addView(hint);
         new AlertDialog.Builder(this).setTitle("Sửa macro").setView(box).setPositiveButton("Lưu",(d,w)->{
-            m.name=n.getText().toString().trim();m.speed=Math.max(.25f,s.getProgress()/100f);
+            m.name=n.getText().toString().trim();m.speed=Math.max(.25f,Math.min(10f,s.getProgress()/100f));
             m.loops=l.getSelectedItemPosition()==0?1:l.getSelectedItemPosition()==1?5:l.getSelectedItemPosition()==2?10:0;
             m.floating=f.isChecked();m.buttonWidth=widthBar.getProgress()+48;m.buttonHeight=heightBar.getProgress()+48;
             MacroStore.upsert(this,m);if(Settings.canDrawOverlays(this))startService(new Intent(this,FloatingService.class).setAction("REFRESH"));refresh();
