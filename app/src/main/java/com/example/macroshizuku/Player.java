@@ -11,6 +11,8 @@ public final class Player {
     private Player(){}
     public static boolean isRunning(String id){Thread t=running.get(id);return t!=null&&t.isAlive();}
     public static void play(Context c,MacroStore.Macro m){ playInternal(c,m,m.loops); }
+    /** Plays continuously until stop() is called, for press-and-hold hotkeys. */
+    public static void playWhileHeld(Context c,MacroStore.Macro m){ playInternal(c,m,0); }
     /** Plays exactly one pass, ignoring the macro's saved repeat count. */
     public static void playOnce(Context c,MacroStore.Macro m){ playInternal(c,m,1); }
     private static void playInternal(Context c,MacroStore.Macro m,int requestedLoops){
@@ -18,7 +20,7 @@ public final class Player {
         if(m.actions==null||m.actions.isEmpty()){Toast.makeText(c.getApplicationContext(),"Macro chưa có thao tác.",Toast.LENGTH_SHORT).show();return;}
         if(!ShizukuShell.ready()){Toast.makeText(c.getApplicationContext(),"Shizuku chưa chạy hoặc chưa được cấp quyền.",Toast.LENGTH_SHORT).show();return;}
         final float speed=Math.max(.25f,Math.min(10f,m.speed));
-        final int repeatDelayMs=Math.max(0,Math.min(100,m.repeatDelayMs));
+        final int repeatDelayMs=Math.max(0,Math.min(1000,m.repeatDelayMs));
         DisplayMetrics displayMetrics=new DisplayMetrics();
         try{
             WindowManager wm=(WindowManager)c.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
