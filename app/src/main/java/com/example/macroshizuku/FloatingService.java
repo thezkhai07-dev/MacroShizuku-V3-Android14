@@ -205,6 +205,7 @@ public class FloatingService extends Service {
             addSlider(card,"Cao",36,400,initialH," dp",v->updateMacroStyle(m.id,"h",v));
             addSlider(card,"Độ mờ",0,100,initialA,"%",v->updateMacroStyle(m.id,"a",v));
             addSpeedSlider(card,m);
+            addSlider(card,"Độ trễ giữa thao tác",0,2000,m.tapIntervalMs," ms",v->{MacroStore.Macro latest=MacroStore.find(FloatingService.this,m.id);if(latest!=null){latest.tapIntervalMs=v;MacroStore.upsert(FloatingService.this,latest);}});
             Spinner repeatCount=new Spinner(this);
             repeatCount.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Số lần lặp: 1","Số lần lặp: 5","Số lần lặp: 10","Số lần lặp: Vô hạn"}));
             repeatCount.setSelection(m.loops==1?0:m.loops==5?1:m.loops==10?2:3);
