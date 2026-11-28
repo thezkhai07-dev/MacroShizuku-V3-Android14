@@ -20,7 +20,6 @@ public final class Player {
         if(m.actions==null||m.actions.isEmpty()){Toast.makeText(c.getApplicationContext(),"Macro chưa có thao tác.",Toast.LENGTH_SHORT).show();return;}
         if(!ShizukuShell.ready()){Toast.makeText(c.getApplicationContext(),"Shizuku chưa chạy hoặc chưa được cấp quyền.",Toast.LENGTH_SHORT).show();return;}
         final float speed=Math.max(.25f,Math.min(10f,m.speed));
-        final int repeatDelayMs=Math.max(0,Math.min(1000,m.repeatDelayMs));
         DisplayMetrics displayMetrics=new DisplayMetrics();
         try{
             WindowManager wm=(WindowManager)c.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
@@ -46,9 +45,6 @@ public final class Player {
                         else continue;
                         ShizukuShell.run("sh","-c",cmd);
                     }
-                    // Delay applies between complete repetitions, never before the first pass.
-                    if(n<loops-1&&repeatDelayMs>0&&!Thread.currentThread().isInterrupted())
-                        Thread.sleep(repeatDelayMs);
                 }
             }catch(Exception ignored){}
             finally{running.remove(m.id,Thread.currentThread());}
