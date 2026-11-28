@@ -86,10 +86,18 @@ public class TouchRecordService extends AccessibilityService {
         }
 
         private static long parseHex(String s) {
+            if (s == null) return 0;
             try {
-                long v = Long.parseLong(s, 16);
-                return v == 0xffffffffL ? -1 : v;
-            } catch (Exception e) { return 0; }
+                // getevent reports ABS_MT_TRACKING_ID=-1 as the unsigned
+                // 32-bit value "ffffffff". Long.parseLong() rejects that
+                // value because it exceeds Long.MAX_VALUE for signed parsing.
+                // Parse it as unsigned so finger-up is correctly recognized.
+                long v = Long.parseUnsignedLong(s.trim(), 16);
+                return (v == 0xffffffffL || v == 0xffffffffffffffffL) ? -1L : v;
+            } catch (Exception e) {
+                android.util.Log.w("TouchRecordService", "Invalid getevent hex value: " + s);
+                return 0;
+            }
         }
 
         private float[] mapped(float rawX, float rawY) {
