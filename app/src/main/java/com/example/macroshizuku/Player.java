@@ -16,7 +16,6 @@ public final class Player {
     /** Plays exactly one pass, ignoring the macro's saved repeat count. */
     public static void playOnce(Context c,MacroStore.Macro m){ playInternal(c,m,1); }
     private static void playInternal(Context c,MacroStore.Macro m,int requestedLoops){
-        stop(m.id);
         if(m.actions==null||m.actions.isEmpty()){Toast.makeText(c.getApplicationContext(),"Macro chưa có thao tác.",Toast.LENGTH_SHORT).show();return;}
         if(!ShizukuShell.ready()){Toast.makeText(c.getApplicationContext(),"Shizuku chưa chạy hoặc chưa được cấp quyền.",Toast.LENGTH_SHORT).show();return;}
         final float speed=Math.max(.25f,Math.min(10f,m.speed));
@@ -53,8 +52,14 @@ public final class Player {
             }catch(Exception ignored){}
             finally{running.remove(m.id,Thread.currentThread());}
         },"macro-"+m.id);
-        running.put(m.id,t);
-        t.start();
+        synchronized(running){
+            Thread active=running.get(m.id);
+            // Ignore duplicate triggers while this macro is already executing.
+            // Replacing a live worker can leave its Shizuku command running in parallel.
+            if(active!=null&&active.isAlive())return;
+            running.put(m.id,t);
+            t.start();
+        }
     }
     private static int toDisplayCoordinate(float value,int dimension,boolean normalized){
         if(normalized)return Math.max(0,Math.min(dimension-1,Math.round(value*(dimension-1))));
