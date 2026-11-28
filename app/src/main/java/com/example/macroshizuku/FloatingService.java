@@ -205,7 +205,6 @@ public class FloatingService extends Service {
                 }
                 public void onNothingSelected(android.widget.AdapterView<?> parent){}
             });
-            addSlider(card,"Độ trễ giữa lần lặp",0,1000,m.repeatDelayMs," ms",v->updateMacroRepeatDelay(m.id,v));
             list.addView(card);
         }
         // Keep the complete menu (macro list and floating-icon settings) inside one
@@ -248,10 +247,6 @@ public class FloatingService extends Service {
         // Update macro views without rebuilding the menu while the user is dragging a slider.
         for(View view:new ArrayList<>(views))if(view!=menuPanel){try{wm.removeView(view);views.remove(view);}catch(Exception ignored){}}
         int stackY=dp(90);for(MacroStore.Macro item:MacroStore.all(this))if(item.floating){addMacro(item,stackY);stackY+=dp((item.buttonHeight>0?item.buttonHeight:prefs().getInt("size",72))+8);}
-    }
-    private void updateMacroRepeatDelay(String id,int value){
-        MacroStore.Macro m=MacroStore.find(this,id);if(m==null)return;
-        m.repeatDelayMs=clamp(value,0,1000);MacroStore.upsert(this,m);
     }
     private void saveRecordingFromMenu(){
         if(!recording()&&!TouchRecordService.hasPendingCapture()){String msg="Chưa có bản ghi để lưu.";Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_SHORT).show();showOverlayMessage(msg);return;}
