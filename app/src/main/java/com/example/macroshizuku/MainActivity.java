@@ -162,7 +162,7 @@ public class MainActivity extends Activity {
     }
     private Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(12);b.setMinWidth(0);b.setPadding(3,0,3,0);b.setAllCaps(false);b.setBackgroundResource(R.drawable.bg_glass_button);b.setTextColor(0xFFEAF7FF);return b;}
     private LinearLayout buttonRow(Button... items){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);for(Button b:items){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f);p.setMargins(3,2,3,2);row.addView(b,p);}return row;}
-    private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.tapIntervalMs=m.tapIntervalMs;c.floating=m.floating;c.buttonWidth=m.buttonWidth;c.buttonHeight=m.buttonHeight;c.buttonAlpha=m.buttonAlpha;c.buttonLocked=m.buttonLocked;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
+    private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.tapIntervalMs=m.tapIntervalMs;c.floating=m.floating;c.buttonWidth=m.buttonWidth;c.buttonHeight=m.buttonHeight;c.buttonAlpha=m.buttonAlpha;c.buttonColor=m.buttonColor;c.buttonTextSize=m.buttonTextSize;c.buttonIcon=m.buttonIcon;c.buttonLocked=m.buttonLocked;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
     private void editMacro(MacroStore.Macro m){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(30,10,30,10);
         EditText n=new EditText(this);n.setText(m.name);box.addView(n);
@@ -186,11 +186,21 @@ public class MainActivity extends Activity {
         widthBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){updateDimensions.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         heightBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){updateDimensions.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         updateDimensions.run();
-        TextView hint=new TextView(this);hint.setText("Kích thước được lưu riêng cho macro này (48–400 dp).");hint.setTextColor(0xFF8292B2);box.addView(hint);
+        TextView alphaLabel=new TextView(this);alphaLabel.setTextColor(0xFFF4F7FF);box.addView(alphaLabel);
+        SeekBar alphaBar=new SeekBar(this);alphaBar.setMax(100);alphaBar.setProgress(m.buttonAlpha>=0?m.buttonAlpha:getSharedPreferences("floating_style",MODE_PRIVATE).getInt("alpha",85));box.addView(alphaBar);
+        Runnable updateAlpha=()->alphaLabel.setText("Độ trong suốt nút: "+alphaBar.getProgress()+"%");alphaBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){updateAlpha.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});updateAlpha.run();
+        TextView textSizeLabel=new TextView(this);textSizeLabel.setTextColor(0xFFF4F7FF);box.addView(textSizeLabel);
+        SeekBar textSizeBar=new SeekBar(this);textSizeBar.setMax(16);textSizeBar.setProgress(Math.max(0,Math.min(16,m.buttonTextSize-8)));box.addView(textSizeBar);
+        Runnable updateTextSize=()->textSizeLabel.setText("Cỡ chữ nút: "+(textSizeBar.getProgress()+8)+" sp");textSizeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){updateTextSize.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});updateTextSize.run();
+        String[] colorNames={"Theo màu chung","Xanh navy","Xanh dương","Cyan","Tím","Đỏ","Cam","Xanh lá","Đen","Trắng"};
+        int[] colorValues={0,0xFF202F4A,0xFF2457C5,0xFF00A6C7,0xFF7040B8,0xFFC83E5A,0xFFE07824,0xFF258653,0xFF151515,0xFFEEEEEE};
+        Spinner colorSpinner=new Spinner(this);colorSpinner.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,colorNames));int colorIndex=0;for(int i=0;i<colorValues.length;i++)if(colorValues[i]==m.buttonColor)colorIndex=i;colorSpinner.setSelection(colorIndex);box.addView(colorSpinner);
+        String[] icons={"Không biểu tượng","▶","●","◆","★","⚡","✓","♥","☰","✦"};Spinner iconSpinner=new Spinner(this);iconSpinner.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,icons));int iconIndex=0;for(int i=0;i<icons.length;i++)if((i==0?"":icons[i]).equals(m.buttonIcon))iconIndex=i;iconSpinner.setSelection(iconIndex);box.addView(iconSpinner);
+        TextView hint=new TextView(this);hint.setText("Kích thước riêng 48–400 dp • màu sắc, biểu tượng, cỡ chữ và độ trong suốt được lưu riêng cho macro.");hint.setTextColor(0xFF8292B2);box.addView(hint);
         new AlertDialog.Builder(this).setTitle("Sửa macro").setView(box).setPositiveButton("Lưu",(d,w)->{
             m.name=n.getText().toString().trim();m.speed=Math.max(.25f,Math.min(10f,s.getProgress()/100f));
             m.loops=l.getSelectedItemPosition()==0?1:l.getSelectedItemPosition()==1?5:l.getSelectedItemPosition()==2?10:0;m.tapIntervalMs=intervalBar.getProgress();
-            m.floating=f.isChecked();m.buttonWidth=widthBar.getProgress()+48;m.buttonHeight=heightBar.getProgress()+48;
+            m.floating=f.isChecked();m.buttonWidth=widthBar.getProgress()+48;m.buttonHeight=heightBar.getProgress()+48;m.buttonAlpha=alphaBar.getProgress();m.buttonTextSize=textSizeBar.getProgress()+8;m.buttonColor=colorValues[colorSpinner.getSelectedItemPosition()];m.buttonIcon=iconSpinner.getSelectedItemPosition()==0?"":icons[iconSpinner.getSelectedItemPosition()];
             MacroStore.upsert(this,m);if(Settings.canDrawOverlays(this))startService(new Intent(this,FloatingService.class).setAction("REFRESH"));refresh();
         }).setNegativeButton("Hủy",null).show();
     }
