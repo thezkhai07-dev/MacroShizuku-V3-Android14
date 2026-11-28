@@ -1,26 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#66B8E8FF">
-    <item>
-        <layer-list>
-            <item android:top="2dp">
-                <shape android:shape="rectangle">
-                    <gradient android:angle="135" android:startColor="#B34D78A8" android:centerColor="#92334F83" android:endColor="#B0182C50"/>
-                    <corners android:radius="20dp"/>
-                    <stroke android:width="1dp" android:color="#90C5EEFF"/>
-                </shape>
-            </item>
-            <item android:left="2dp" android:top="3dp" android:right="2dp" android:bottom="2dp">
-                <shape android:shape="rectangle">
-                    <gradient android:angle="90" android:startColor="#30FFFFFF" android:endColor="#00FFFFFF"/>
-                    <corners android:radius="18dp"/>
-                </shape>
-            </item>
-            <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp">
-                <shape android:shape="rectangle">
-                    <corners android:radius="19dp"/>
-                    <stroke android:width="1dp" android:color="#30FFFFFF"/>
-                </shape>
-            </item>
-        </layer-list>
-    </item>
-</ripple>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#405A7A"><item><shape android:shape="rectangle"><solid android:color="#263D5D"/><corners android:radius="12dp"/></shape></item></ripple>
