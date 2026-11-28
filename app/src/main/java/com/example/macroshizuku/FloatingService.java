@@ -138,11 +138,29 @@ public class FloatingService extends Service {
     }
     private void makePanelDraggable(View handle,View panel){
         handle.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;boolean moved;
+            private void disallowParentIntercept(boolean disallow){
+                ViewParent parent=handle.getParent();
+                while(parent!=null){parent.requestDisallowInterceptTouchEvent(disallow);parent=parent.getParent();}
+            }
             public boolean onTouch(View v,MotionEvent e){
                 WindowManager.LayoutParams lp=(WindowManager.LayoutParams)panel.getLayoutParams();
-                if(e.getAction()==MotionEvent.ACTION_DOWN){sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;moved=false;return true;}
-                if(e.getAction()==MotionEvent.ACTION_MOVE){float dx=e.getRawX()-sx,dy=e.getRawY()-sy;if(Math.abs(dx)+Math.abs(dy)>dp(6))moved=true;if(moved){lp.x=ox+(int)dx;lp.y=oy+(int)dy;try{wm.updateViewLayout(panel,lp);}catch(Exception ignored){}}return true;}
-                if(e.getAction()==MotionEvent.ACTION_UP){if(moved)prefs().edit().putInt("menu_panel_x",lp.x).putInt("menu_panel_y",lp.y).apply();return true;}
+                if(e.getAction()==MotionEvent.ACTION_DOWN){
+                    // The heading is a dedicated drag handle. Prevent the surrounding
+                    // ScrollView from stealing vertical swipes and scrolling its content.
+                    disallowParentIntercept(true);
+                    sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;moved=false;return true;
+                }
+                if(e.getAction()==MotionEvent.ACTION_MOVE){
+                    float dx=e.getRawX()-sx,dy=e.getRawY()-sy;
+                    if(Math.abs(dx)+Math.abs(dy)>dp(6))moved=true;
+                    if(moved){lp.x=ox+(int)dx;lp.y=oy+(int)dy;try{wm.updateViewLayout(panel,lp);}catch(Exception ignored){}}
+                    return true;
+                }
+                if(e.getAction()==MotionEvent.ACTION_UP||e.getAction()==MotionEvent.ACTION_CANCEL){
+                    if(moved)prefs().edit().putInt("menu_panel_x",lp.x).putInt("menu_panel_y",lp.y).apply();
+                    disallowParentIntercept(false);
+                    return true;
+                }
                 return true;
             }
         });
