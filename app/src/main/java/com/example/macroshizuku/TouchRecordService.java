@@ -52,6 +52,7 @@ public class TouchRecordService extends AccessibilityService {
     private android.view.View stopOverlay;
     private final android.os.Handler stopOverlayHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private static volatile int lastHotkeyDispatchCode = 0;
+    private volatile String volumeUpMacroId = "";
 
     private static final class TouchDevice {
         String path;
@@ -394,6 +395,7 @@ public class TouchRecordService extends AccessibilityService {
                             if (!line.contains("EV_KEY")) continue;
                             if (line.contains("KEY_VOLUMEUP")) {
                                 if (line.trim().endsWith("DOWN")) dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_UP, "Shizuku");
+                                else if (line.trim().endsWith("UP")) stopVolumeUpPlayback("Shizuku");
                             } else if (line.contains("KEY_VOLUMEDOWN") && line.trim().endsWith("DOWN")) {
                                 dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_DOWN, "Shizuku");
                             }
@@ -489,6 +491,8 @@ public class TouchRecordService extends AccessibilityService {
                 return true;
             }
             dispatchVolumeHotkey(code, "Accessibility");
+        } else if (e.getAction() == KeyEvent.ACTION_UP && code == KeyEvent.KEYCODE_VOLUME_UP) {
+            stopVolumeUpPlayback("Accessibility");
         }
         if (code == KeyEvent.KEYCODE_VOLUME_DOWN &&
             SystemClock.elapsedRealtime() <= consumeVolumeDownUntilMs) return true;
@@ -502,8 +506,18 @@ public class TouchRecordService extends AccessibilityService {
         if (id.isEmpty()) { android.util.Log.w("TouchRecordService", "Volume Up ignored: no selected macro id"); return; }
         MacroStore.Macro m = MacroStore.find(this, id);
         if (m == null) { android.util.Log.w("TouchRecordService", "Volume Up ignored: selected macro not found: " + id); return; }
-        android.util.Log.i("TouchRecordService", "Volume Up pressed: macro=" + id + ", savedLoops=" + m.loops);
+        volumeUpMacroId = id;
+        android.util.Log.i("TouchRecordService", "Volume Up pressed: macro=" + id + ", savedLoops=" + m.loops + "; release stops early");
         Player.play(this, m);
+    }
+
+    /** Releasing Volume Up stops any remaining passes; saved loop count remains the hard limit. */
+    private void stopVolumeUpPlayback(String source) {
+        String id = volumeUpMacroId;
+        if (id.isEmpty()) return;
+        volumeUpMacroId = "";
+        Player.stop(id);
+        android.util.Log.i("TouchRecordService", "Volume Up released: source=" + source + ", macro=" + id);
     }
 
     @Override public void onMotionEvent(MotionEvent e) {
