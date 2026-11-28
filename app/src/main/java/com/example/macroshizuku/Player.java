@@ -32,7 +32,8 @@ public final class Player {
             try{
                 int loops=requestedLoops<=0?Integer.MAX_VALUE:requestedLoops;
                 for(int n=0;n<loops&&!Thread.currentThread().isInterrupted();n++){
-                    for(MacroStore.Action x:m.actions){
+                    for(int actionIndex=0;actionIndex<m.actions.size();actionIndex++){
+                        MacroStore.Action x=m.actions.get(actionIndex);
                         if(Thread.currentThread().isInterrupted())break;
                         if(x.delay>0)Thread.sleep(Math.max(0,Math.round(x.delay/speed)));
                         String cmd;
@@ -44,6 +45,9 @@ public final class Player {
                         else if("swipe".equals(x.type))cmd="input swipe "+x1+" "+y1+" "+x2+" "+y2+" "+Math.max(1,Math.round(x.duration/speed));
                         else continue;
                         ShizukuShell.run("sh","-c",cmd);
+                        // Extra user-configured gap applies only between actions, never between repeat cycles.
+                        if(actionIndex<m.actions.size()-1 && m.tapIntervalMs>0 && !Thread.currentThread().isInterrupted())
+                            Thread.sleep(Math.max(0,Math.round(m.tapIntervalMs/speed)));
                     }
                 }
             }catch(Exception ignored){}
