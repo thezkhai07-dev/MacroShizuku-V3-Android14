@@ -52,8 +52,6 @@ public class TouchRecordService extends AccessibilityService {
     private android.view.View stopOverlay;
     private final android.os.Handler stopOverlayHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private static volatile int lastHotkeyDispatchCode = 0;
-    private volatile boolean volumeUpHeld = false;
-    private volatile String heldMacroId = "";
 
     private static final class TouchDevice {
         String path;
@@ -396,7 +394,6 @@ public class TouchRecordService extends AccessibilityService {
                             if (!line.contains("EV_KEY")) continue;
                             if (line.contains("KEY_VOLUMEUP")) {
                                 if (line.trim().endsWith("DOWN")) dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_UP, "Shizuku");
-                                else if (line.trim().endsWith("UP")) stopVolumeUpHold("Shizuku");
                             } else if (line.contains("KEY_VOLUMEDOWN") && line.trim().endsWith("DOWN")) {
                                 dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_DOWN, "Shizuku");
                             }
@@ -422,10 +419,9 @@ public class TouchRecordService extends AccessibilityService {
     private void dispatchVolumeHotkey(int code, String source) {
         long now = SystemClock.elapsedRealtime();
         synchronized (TouchRecordService.class) {
-            // Volume Up start is already edge-guarded by volumeUpHeld. Do not
-            // debounce it by time: a quick release/re-press must start again.
-            if (code != KeyEvent.KEYCODE_VOLUME_UP &&
-                code == lastHotkeyDispatchCode && now - lastHotkeyDispatchMs < 350) return;
+            // Accessibility and Shizuku may report the same physical key press.
+            // Suppress the duplicate event so a single press starts one playback.
+            if (code == lastHotkeyDispatchCode && now - lastHotkeyDispatchMs < 250) return;
             lastHotkeyDispatchCode = code; lastHotkeyDispatchMs = now;
         }
         SharedPreferences prefs = getSharedPreferences("hotkeys", MODE_PRIVATE);
@@ -436,7 +432,7 @@ public class TouchRecordService extends AccessibilityService {
             return;
         }
         if (!enabled) return;
-        if (code == KeyEvent.KEYCODE_VOLUME_UP) playSelectedWhileHeld();
+        if (code == KeyEvent.KEYCODE_VOLUME_UP) playSelectedMacro();
         else if (code == KeyEvent.KEYCODE_VOLUME_DOWN) Player.stopAll();
     }
 
@@ -493,8 +489,6 @@ public class TouchRecordService extends AccessibilityService {
                 return true;
             }
             dispatchVolumeHotkey(code, "Accessibility");
-        } else if (e.getAction() == KeyEvent.ACTION_UP && code == KeyEvent.KEYCODE_VOLUME_UP) {
-            stopVolumeUpHold("Accessibility");
         }
         if (code == KeyEvent.KEYCODE_VOLUME_DOWN &&
             SystemClock.elapsedRealtime() <= consumeVolumeDownUntilMs) return true;
@@ -502,27 +496,14 @@ public class TouchRecordService extends AccessibilityService {
         return recording || prefs.getBoolean("enabled", false);
     }
 
-    /** Starts an unlimited repeat while Volume Up is physically held. */
-    private void playSelectedWhileHeld() {
-        if (volumeUpHeld) return;
+    /** Volume Up starts the selected macro using its saved repeat count. */
+    private void playSelectedMacro() {
         String id = getSharedPreferences("hotkeys", MODE_PRIVATE).getString("selected_id", "");
         if (id.isEmpty()) { android.util.Log.w("TouchRecordService", "Volume Up ignored: no selected macro id"); return; }
         MacroStore.Macro m = MacroStore.find(this, id);
         if (m == null) { android.util.Log.w("TouchRecordService", "Volume Up ignored: selected macro not found: " + id); return; }
-        volumeUpHeld = true;
-        heldMacroId = id;
-        Player.playWhileHeld(this, m);
-        android.util.Log.i("TouchRecordService", "Volume Up hold started: macro=" + id + ", forcedInfiniteRepeat=true");
-    }
-
-    /** Stops only the macro started by this Volume Up hold. */
-    private void stopVolumeUpHold(String source) {
-        if (!volumeUpHeld) return;
-        volumeUpHeld = false;
-        String id = heldMacroId;
-        heldMacroId = "";
-        if (!id.isEmpty()) Player.stop(id);
-        android.util.Log.i("TouchRecordService", "Volume Up hold released: source=" + source + ", macro=" + id);
+        android.util.Log.i("TouchRecordService", "Volume Up pressed: macro=" + id + ", savedLoops=" + m.loops);
+        Player.play(this, m);
     }
 
     @Override public void onMotionEvent(MotionEvent e) {
