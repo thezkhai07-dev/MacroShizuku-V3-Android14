@@ -48,20 +48,14 @@ public class FloatingService extends Service {
         int type=Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE;
         WindowManager.LayoutParams p=new WindowManager.LayoutParams(-2,-2,type,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,PixelFormat.TRANSLUCENT);
         p.gravity=Gravity.TOP|Gravity.START;p.x=x;p.y=y;
-        // Android 12+ can blur the real content behind translucent overlay windows.
-        if(Build.VERSION.SDK_INT>=31){
-            try{p.setBlurBehindRadius(dp(28));p.flags|=WindowManager.LayoutParams.FLAG_BLUR_BEHIND;}catch(Exception ignored){}
-        }
         return p;
     }
     private GradientDrawable rounded(int color,int alpha){
-        int glassAlpha=clamp(alpha,0,100);
-        GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-            new int[]{withAlpha(0xFFB9E8FF,Math.max(4,glassAlpha/5)),
-                withAlpha(color,glassAlpha),withAlpha(0xFF101A35,Math.max(12,glassAlpha-8))});
-        d.setCornerRadius(dp(22));
-        d.setStroke(dp(1),withAlpha(0xFFE3F6FF,Math.max(12,glassAlpha/2)));
-        d.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        int a=clamp(alpha,0,100);
+        GradientDrawable d=new GradientDrawable();
+        d.setColor(withAlpha(color,a));
+        d.setCornerRadius(dp(14));
+        d.setStroke(dp(1),withAlpha(0xFF526987,Math.max(25,a/2)));
         return d;
     }
     private void addView(View v,WindowManager.LayoutParams p){wm.addView(v,p);views.add(v);}
@@ -81,7 +75,7 @@ public class FloatingService extends Service {
         int h=m.buttonHeight>0?clamp(m.buttonHeight,36,400):clamp(prefs().getInt("size",72),36,400);
         int w=m.buttonWidth>0?clamp(m.buttonWidth,36,400):clamp(prefs().getInt("width",72),36,400);
         int alpha=m.buttonAlpha>=0?m.buttonAlpha:clamp(prefs().getInt("alpha",85),0,100);
-        TextView b=new TextView(this);b.setText(m.name);b.setTextColor(withAlpha(Color.WHITE,alpha));b.setTextSize(10);b.setGravity(Gravity.CENTER);b.setMaxLines(3);b.setEllipsize(android.text.TextUtils.TruncateAt.END);b.setPadding(dp(5),dp(5),dp(5),dp(5));b.setBackground(rounded(macroColor(),alpha));
+        TextView b=new TextView(this);b.setText((m.buttonIcon==null||m.buttonIcon.isEmpty()?"":m.buttonIcon+" ")+m.name);b.setTextColor(withAlpha(Color.WHITE,alpha));b.setTextSize(clamp(m.buttonTextSize,8,24));b.setGravity(Gravity.CENTER);b.setMaxLines(3);b.setEllipsize(android.text.TextUtils.TruncateAt.END);b.setPadding(dp(5),dp(5),dp(5),dp(5));b.setBackground(rounded(m.buttonColor!=0?m.buttonColor:macroColor(),alpha));
         b.setContentDescription(m.name+(m.loops==1?" - chạm để chạy một lần":" - giữ để chạy, thả để dừng"));
         String key="macro_"+m.id+"_";int x=prefs().getInt(key+"x",20),y=prefs().getInt(key+"y",defaultY);
         b.setOnTouchListener(new View.OnTouchListener(){
@@ -177,7 +171,7 @@ public class FloatingService extends Service {
         });
     }
     private void showMenuPanel(){
-        LinearLayout root=vertical();root.setPadding(dp(12),dp(10),dp(12),dp(10));root.setBackground(rounded(0xFF101D31,76));
+        LinearLayout root=vertical();root.setPadding(dp(12),dp(10),dp(12),dp(10));root.setBackground(rounded(0xFF172238,98));
         TextView heading=label("☰  MACRO CONTROL  •  KÉO ĐỂ DI CHUYỂN");heading.setTextSize(13);heading.setTypeface(null,1);heading.setPadding(dp(4),dp(4),dp(4),dp(4));heading.setBackground(rounded(0xFF294D72,82));root.addView(heading);
         LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);
         Button record=actionButton(recording()?"■ ĐANG GHI":"● GHI");Button save=actionButton("■ DỪNG & LƯU");actions.addView(record,new LinearLayout.LayoutParams(0,-2,1));actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));root.addView(actions);
