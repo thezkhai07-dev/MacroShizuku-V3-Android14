@@ -422,7 +422,10 @@ public class TouchRecordService extends AccessibilityService {
     private void dispatchVolumeHotkey(int code, String source) {
         long now = SystemClock.elapsedRealtime();
         synchronized (TouchRecordService.class) {
-            if (code == lastHotkeyDispatchCode && now - lastHotkeyDispatchMs < 350) return;
+            // Volume Up start is already edge-guarded by volumeUpHeld. Do not
+            // debounce it by time: a quick release/re-press must start again.
+            if (code != KeyEvent.KEYCODE_VOLUME_UP &&
+                code == lastHotkeyDispatchCode && now - lastHotkeyDispatchMs < 350) return;
             lastHotkeyDispatchCode = code; lastHotkeyDispatchMs = now;
         }
         SharedPreferences prefs = getSharedPreferences("hotkeys", MODE_PRIVATE);
