@@ -100,11 +100,14 @@ public class TouchRecordService extends AccessibilityService {
             // that the driver has already rotated coordinates: ranges describe the
             // physical sensor and can remain landscape-shaped in every orientation.
             if (rotation == SurfaceRotation.ROTATION_90) {
-                x = 1f - ny; y = nx;
+                // Vivo X100s reports raw X along the physical vertical axis
+                // and raw Y along the physical horizontal axis in landscape.
+                // Four-corner calibration confirms this mapping for rotation=1.
+                x = ny; y = 1f - nx;
             } else if (rotation == SurfaceRotation.ROTATION_180) {
                 x = 1f - nx; y = 1f - ny;
             } else if (rotation == SurfaceRotation.ROTATION_270) {
-                x = ny; y = 1f - nx;
+                x = 1f - ny; y = nx;
             }
             // Store display-relative fractions so playback adapts to orientation and resolution.
             return new float[]{clamp(x), clamp(y)};
