@@ -47,11 +47,22 @@ public class FloatingService extends Service {
     private WindowManager.LayoutParams params(int x,int y){
         int type=Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE;
         WindowManager.LayoutParams p=new WindowManager.LayoutParams(-2,-2,type,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,PixelFormat.TRANSLUCENT);
-        p.gravity=Gravity.TOP|Gravity.START;p.x=x;p.y=y;return p;
+        p.gravity=Gravity.TOP|Gravity.START;p.x=x;p.y=y;
+        // Android 12+ can blur the real content behind translucent overlay windows.
+        if(Build.VERSION.SDK_INT>=31){
+            try{p.setBackgroundBlurRadius(dp(28));p.flags|=WindowManager.LayoutParams.FLAG_BLUR_BEHIND;}catch(Exception ignored){}
+        }
+        return p;
     }
     private GradientDrawable rounded(int color,int alpha){
-        GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{withAlpha(color,alpha),withAlpha(color,Math.max(5,alpha-12))});
-        d.setCornerRadius(dp(16));d.setStroke(dp(1),withAlpha(0xFF79DFFF,Math.max(8,alpha/3)));return d;
+        int glassAlpha=clamp(alpha,0,100);
+        GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+            new int[]{withAlpha(0xFFB9E8FF,Math.max(4,glassAlpha/5)),
+                withAlpha(color,glassAlpha),withAlpha(0xFF101A35,Math.max(12,glassAlpha-8))});
+        d.setCornerRadius(dp(22));
+        d.setStroke(dp(1),withAlpha(0xFFE3F6FF,Math.max(12,glassAlpha/2)));
+        d.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        return d;
     }
     private void addView(View v,WindowManager.LayoutParams p){wm.addView(v,p);views.add(v);}
     private void removeViews(){
@@ -166,8 +177,8 @@ public class FloatingService extends Service {
         });
     }
     private void showMenuPanel(){
-        LinearLayout root=vertical();root.setPadding(dp(12),dp(10),dp(12),dp(10));root.setBackground(rounded(0xFF101D31,96));
-        TextView heading=label("☰  MACRO CONTROL  •  KÉO ĐỂ DI CHUYỂN");heading.setTextSize(13);heading.setTypeface(null,1);heading.setPadding(dp(4),dp(4),dp(4),dp(4));heading.setBackground(rounded(0xFF294D72,90));root.addView(heading);
+        LinearLayout root=vertical();root.setPadding(dp(12),dp(10),dp(12),dp(10));root.setBackground(rounded(0xFF101D31,76));
+        TextView heading=label("☰  MACRO CONTROL  •  KÉO ĐỂ DI CHUYỂN");heading.setTextSize(13);heading.setTypeface(null,1);heading.setPadding(dp(4),dp(4),dp(4),dp(4));heading.setBackground(rounded(0xFF294D72,82));root.addView(heading);
         LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);
         Button record=actionButton(recording()?"■ ĐANG GHI":"● GHI");Button save=actionButton("■ DỪNG & LƯU");actions.addView(record,new LinearLayout.LayoutParams(0,-2,1));actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));root.addView(actions);
         record.setOnClickListener(v->{
@@ -182,7 +193,7 @@ public class FloatingService extends Service {
         List<MacroStore.Macro> macros=MacroStore.all(this);
         if(macros.isEmpty())list.addView(label("Chưa có macro nào được lưu."));
         for(MacroStore.Macro m:macros){
-            LinearLayout card=vertical();card.setPadding(dp(8),dp(6),dp(8),dp(8));card.setBackground(rounded(0xFF21334C,88));
+            LinearLayout card=vertical();card.setPadding(dp(8),dp(6),dp(8),dp(8));card.setBackground(rounded(0xFF21334C,76));
             CheckBox visible=new CheckBox(this);visible.setText("Hiện: "+m.name);visible.setTextColor(Color.WHITE);visible.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF42D9F5));visible.setChecked(m.floating);card.addView(visible);
             visible.setOnCheckedChangeListener((button,checked)->{MacroStore.Macro latest=MacroStore.find(this,m.id);if(latest!=null){latest.floating=checked;MacroStore.upsert(this,latest);refresh();}});
             CheckBox lock=new CheckBox(this);lock.setText("Khóa di chuyển");lock.setTextColor(Color.WHITE);lock.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF42D9F5));lock.setChecked(m.buttonLocked);card.addView(lock);
