@@ -54,6 +54,7 @@ public class TouchRecordService extends AccessibilityService {
     private static volatile int lastHotkeyDispatchCode = 0;
     private static volatile boolean volumeUpPressed = false;
     private volatile String volumeUpMacroId = "";
+    private volatile boolean volumeUpOneShot = false;
 
     private static final class TouchDevice {
         String path;
@@ -521,18 +522,33 @@ public class TouchRecordService extends AccessibilityService {
         MacroStore.Macro m = MacroStore.find(this, id);
         if (m == null) { android.util.Log.w("TouchRecordService", "Volume Up ignored: selected macro not found: " + id); return; }
         volumeUpMacroId = id;
-        android.util.Log.i("TouchRecordService", "Volume Up pressed: macro=" + id + ", savedLoops=" + m.loops + "; release stops early");
-        Player.play(this, m);
+        volumeUpOneShot = (m.loops == 1);
+        android.util.Log.i("TouchRecordService", "Volume Up pressed: macro=" + id + ", savedLoops=" + m.loops);
+        // Match the floating button: a one-shot macro starts after key release
+        // and must be allowed to finish. Repeat modes run while held.
+        if (!volumeUpOneShot) Player.play(this, m);
     }
 
-    /** Releasing Volume Up stops any remaining passes; saved loop count remains the hard limit. */
+    /** One-shot runs to completion; repeat modes stop when Volume Up is released. */
     private void stopVolumeUpPlayback(String source) {
-        synchronized (TouchRecordService.class) { volumeUpPressed = false; }
-        String id = volumeUpMacroId;
+        final String id;
+        final boolean oneShot;
+        synchronized (TouchRecordService.class) {
+            if (!volumeUpPressed) return;
+            volumeUpPressed = false;
+            id = volumeUpMacroId;
+            oneShot = volumeUpOneShot;
+            volumeUpMacroId = "";
+            volumeUpOneShot = false;
+        }
         if (id.isEmpty()) return;
-        volumeUpMacroId = "";
-        Player.stop(id);
-        android.util.Log.i("TouchRecordService", "Volume Up released: source=" + source + ", macro=" + id);
+        if (oneShot) {
+            MacroStore.Macro m = MacroStore.find(this, id);
+            if (m != null) Player.playOnce(this, m);
+        } else {
+            Player.stop(id);
+        }
+        android.util.Log.i("TouchRecordService", "Volume Up released: source=" + source + ", macro=" + id + ", oneShot=" + oneShot);
     }
 
     @Override public void onMotionEvent(MotionEvent e) {
