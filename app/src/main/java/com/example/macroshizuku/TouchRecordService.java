@@ -512,7 +512,7 @@ public class TouchRecordService extends AccessibilityService {
         volumeUpHeld = true;
         heldMacroId = id;
         Player.playWhileHeld(this, m);
-        android.util.Log.i("TouchRecordService", "Volume Up hold started: macro=" + id + ", forcedInfiniteRepeat=true);
+        android.util.Log.i("TouchRecordService", "Volume Up hold started: macro=" + id + ", forcedInfiniteRepeat=true");
     }
 
     /** Stops only the macro started by this Volume Up hold. */
