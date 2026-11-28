@@ -194,6 +194,18 @@ public class FloatingService extends Service {
             addSlider(card,"Cao",36,400,initialH," dp",v->updateMacroStyle(m.id,"h",v));
             addSlider(card,"Độ mờ",0,100,initialA,"%",v->updateMacroStyle(m.id,"a",v));
             addSpeedSlider(card,m);
+            Spinner repeatCount=new Spinner(this);
+            repeatCount.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Số lần lặp: 1","Số lần lặp: 5","Số lần lặp: 10","Số lần lặp: Vô hạn"}));
+            repeatCount.setSelection(m.loops==1?0:m.loops==5?1:m.loops==10?2:3);
+            card.addView(repeatCount);
+            repeatCount.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+                public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){
+                    MacroStore.Macro latest=MacroStore.find(FloatingService.this,m.id);
+                    if(latest!=null){int value=position==0?1:position==1?5:position==2?10:0;if(latest.loops!=value){latest.loops=value;MacroStore.upsert(FloatingService.this,latest);}}
+                }
+                public void onNothingSelected(android.widget.AdapterView<?> parent){}
+            });
+            addSlider(card,"Độ trễ giữa lần lặp",0,100,m.repeatDelayMs," ms",v->updateMacroRepeatDelay(m.id,v));
             list.addView(card);
         }
         // Keep the complete menu (macro list and floating-icon settings) inside one
@@ -236,6 +248,10 @@ public class FloatingService extends Service {
         // Update macro views without rebuilding the menu while the user is dragging a slider.
         for(View view:new ArrayList<>(views))if(view!=menuPanel){try{wm.removeView(view);views.remove(view);}catch(Exception ignored){}}
         int stackY=dp(90);for(MacroStore.Macro item:MacroStore.all(this))if(item.floating){addMacro(item,stackY);stackY+=dp((item.buttonHeight>0?item.buttonHeight:prefs().getInt("size",72))+8);}
+    }
+    private void updateMacroRepeatDelay(String id,int value){
+        MacroStore.Macro m=MacroStore.find(this,id);if(m==null)return;
+        m.repeatDelayMs=clamp(value,0,100);MacroStore.upsert(this,m);
     }
     private void saveRecordingFromMenu(){
         if(!recording()&&!TouchRecordService.hasPendingCapture()){String msg="Chưa có bản ghi để lưu.";Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_SHORT).show();showOverlayMessage(msg);return;}
