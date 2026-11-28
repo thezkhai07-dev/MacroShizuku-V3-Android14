@@ -162,7 +162,7 @@ public class MainActivity extends Activity {
     }
     private Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(12);b.setMinWidth(0);b.setPadding(3,0,3,0);b.setAllCaps(false);b.setBackgroundResource(R.drawable.bg_glass_button);b.setTextColor(0xFFEAF7FF);return b;}
     private LinearLayout buttonRow(Button... items){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);for(Button b:items){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f);p.setMargins(3,2,3,2);row.addView(b,p);}return row;}
-    private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.repeatDelayMs=m.repeatDelayMs;c.floating=m.floating;c.buttonWidth=m.buttonWidth;c.buttonHeight=m.buttonHeight;c.buttonAlpha=m.buttonAlpha;c.buttonLocked=m.buttonLocked;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
+    private MacroStore.Macro copy(MacroStore.Macro m){MacroStore.Macro c=new MacroStore.Macro("",m.name);c.speed=m.speed;c.loops=m.loops;c.floating=m.floating;c.buttonWidth=m.buttonWidth;c.buttonHeight=m.buttonHeight;c.buttonAlpha=m.buttonAlpha;c.buttonLocked=m.buttonLocked;for(MacroStore.Action a:m.actions)c.actions.add(new MacroStore.Action(a.type,a.x1,a.y1,a.x2,a.y2,a.delay,a.duration));return c;}
     private void editMacro(MacroStore.Macro m){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(30,10,30,10);
         EditText n=new EditText(this);n.setText(m.name);box.addView(n);
@@ -172,10 +172,6 @@ public class MainActivity extends Activity {
         s.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){updateSpeedLabel.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         updateSpeedLabel.run();
         Spinner l=new Spinner(this);l.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"1 lần","5 lần","10 lần","Vô hạn"}));l.setSelection(m.loops==1?0:m.loops==5?1:m.loops==10?2:3);box.addView(l);
-        TextView repeatDelayLabel=new TextView(this);repeatDelayLabel.setTextColor(0xFFF4F7FF);box.addView(repeatDelayLabel);
-        SeekBar repeatDelayBar=new SeekBar(this);repeatDelayBar.setMax(1000);repeatDelayBar.setProgress(Math.max(0,Math.min(1000,m.repeatDelayMs)));box.addView(repeatDelayBar);
-        repeatDelayLabel.setText("Độ trễ giữa các lần lặp: "+repeatDelayBar.getProgress()+" ms");
-        repeatDelayBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){repeatDelayLabel.setText("Độ trễ giữa các lần lặp: "+p+" ms");}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         CheckBox f=new CheckBox(this);f.setText("Hiện nút nổi cho macro này");f.setChecked(m.floating);box.addView(f);
         TextView widthLabel=new TextView(this);widthLabel.setTextColor(0xFFF4F7FF);box.addView(widthLabel);
         SeekBar widthBar=new SeekBar(this);widthBar.setMax(352);widthBar.setProgress(Math.max(0,(m.buttonWidth>0?m.buttonWidth:getSharedPreferences("floating_style",MODE_PRIVATE).getInt("width",72))-48));box.addView(widthBar);
@@ -189,7 +185,6 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this).setTitle("Sửa macro").setView(box).setPositiveButton("Lưu",(d,w)->{
             m.name=n.getText().toString().trim();m.speed=Math.max(.25f,Math.min(10f,s.getProgress()/100f));
             m.loops=l.getSelectedItemPosition()==0?1:l.getSelectedItemPosition()==1?5:l.getSelectedItemPosition()==2?10:0;
-            m.repeatDelayMs=Math.max(0,Math.min(1000,repeatDelayBar.getProgress()));
             m.floating=f.isChecked();m.buttonWidth=widthBar.getProgress()+48;m.buttonHeight=heightBar.getProgress()+48;
             MacroStore.upsert(this,m);if(Settings.canDrawOverlays(this))startService(new Intent(this,FloatingService.class).setAction("REFRESH"));refresh();
         }).setNegativeButton("Hủy",null).show();
