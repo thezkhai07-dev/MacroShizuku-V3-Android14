@@ -52,6 +52,8 @@ public class TouchRecordService extends AccessibilityService {
     private android.view.View stopOverlay;
     private final android.os.Handler stopOverlayHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private static volatile int lastHotkeyDispatchCode = 0;
+    private volatile boolean volumeUpHeld = false;
+    private volatile String heldMacroId = "";
 
     private static final class TouchDevice {
         String path;
@@ -392,8 +394,12 @@ public class TouchRecordService extends AccessibilityService {
                         String line;
                         while (instance == this && !Thread.currentThread().isInterrupted() && (line = reader.readLine()) != null) {
                             if (!line.contains("EV_KEY")) continue;
-                            if (line.contains("KEY_VOLUMEUP") && line.trim().endsWith("DOWN")) dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_UP, "Shizuku");
-                            else if (line.contains("KEY_VOLUMEDOWN") && line.trim().endsWith("DOWN")) dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_DOWN, "Shizuku");
+                            if (line.contains("KEY_VOLUMEUP")) {
+                                if (line.trim().endsWith("DOWN")) dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_UP, "Shizuku");
+                                else if (line.trim().endsWith("UP")) stopVolumeUpHold("Shizuku");
+                            } else if (line.contains("KEY_VOLUMEDOWN") && line.trim().endsWith("DOWN")) {
+                                dispatchVolumeHotkey(KeyEvent.KEYCODE_VOLUME_DOWN, "Shizuku");
+                            }
                         }
                     }
                 } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
@@ -427,7 +433,7 @@ public class TouchRecordService extends AccessibilityService {
             return;
         }
         if (!enabled) return;
-        if (code == KeyEvent.KEYCODE_VOLUME_UP) playSelectedOnce();
+        if (code == KeyEvent.KEYCODE_VOLUME_UP) playSelectedWhileHeld();
         else if (code == KeyEvent.KEYCODE_VOLUME_DOWN) Player.stopAll();
     }
 
@@ -484,6 +490,8 @@ public class TouchRecordService extends AccessibilityService {
                 return true;
             }
             dispatchVolumeHotkey(code, "Accessibility");
+        } else if (e.getAction() == KeyEvent.ACTION_UP && code == KeyEvent.KEYCODE_VOLUME_UP) {
+            stopVolumeUpHold("Accessibility");
         }
         if (code == KeyEvent.KEYCODE_VOLUME_DOWN &&
             SystemClock.elapsedRealtime() <= consumeVolumeDownUntilMs) return true;
@@ -491,13 +499,27 @@ public class TouchRecordService extends AccessibilityService {
         return recording || prefs.getBoolean("enabled", false);
     }
 
-    private void playSelectedOnce() {
+    /** Starts an unlimited repeat while Volume Up is physically held. */
+    private void playSelectedWhileHeld() {
+        if (volumeUpHeld) return;
         String id = getSharedPreferences("hotkeys", MODE_PRIVATE).getString("selected_id", "");
         if (id.isEmpty()) { android.util.Log.w("TouchRecordService", "Volume Up ignored: no selected macro id"); return; }
         MacroStore.Macro m = MacroStore.find(this, id);
         if (m == null) { android.util.Log.w("TouchRecordService", "Volume Up ignored: selected macro not found: " + id); return; }
-        if (Player.isRunning(id)) return;
-        Player.playOnce(this, m);
+        volumeUpHeld = true;
+        heldMacroId = id;
+        Player.playWhileHeld(this, m);
+        android.util.Log.i("TouchRecordService", "Volume Up hold started: macro=" + id + ", repeatDelayMs=" + m.repeatDelayMs);
+    }
+
+    /** Stops only the macro started by this Volume Up hold. */
+    private void stopVolumeUpHold(String source) {
+        if (!volumeUpHeld) return;
+        volumeUpHeld = false;
+        String id = heldMacroId;
+        heldMacroId = "";
+        if (!id.isEmpty()) Player.stop(id);
+        android.util.Log.i("TouchRecordService", "Volume Up hold released: source=" + source + ", macro=" + id);
     }
 
     @Override public void onMotionEvent(MotionEvent e) {
