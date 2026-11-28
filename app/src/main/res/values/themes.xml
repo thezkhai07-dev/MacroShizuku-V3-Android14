@@ -3,18 +3,26 @@
         <item name="materialButtonStyle">@style/Widget.MacroShizuku.Button</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:statusBarColor">#070D24</item>
-        <item name="android:navigationBarColor">#070D24</item>
-        <item name="android:windowBackground">#070D24</item>
-        <item name="colorPrimary">#42D9F5</item>
-        <item name="colorSecondary">#9B7BFF</item>
+        <item name="android:statusBarColor">#070A18</item>
+        <item name="android:navigationBarColor">#080B1B</item>
+        <item name="android:windowBackground">@drawable/bg_screen</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:colorAccent">#9BDFFF</item>
+        <item name="colorPrimary">#8AD8FF</item>
+        <item name="colorOnPrimary">#071426</item>
+        <item name="colorSecondary">#B6A2FF</item>
+        <item name="colorOnSecondary">#17102D</item>
+        <item name="colorSurface">#17213A</item>
+        <item name="colorOnSurface">#F4F7FF</item>
     </style>
     <style name="Widget.MacroShizuku.Button" parent="Widget.Material3.Button">
-        <item name="cornerRadius">16dp</item>
-        <item name="backgroundTint">#C8173D63</item>
-        <item name="strokeColor">#805AE7FF</item>
+        <item name="cornerRadius">20dp</item>
+        <item name="backgroundTint">#B32A4770</item>
+        <item name="strokeColor">#70BFEAFF</item>
         <item name="strokeWidth">1dp</item>
-        <item name="android:textColor">#F2FBFF</item>
-        <item name="android:minHeight">48dp</item>
+        <item name="android:textColor">#F5FAFF</item>
+        <item name="android:minHeight">50dp</item>
+        <item name="android:stateListAnimator">@null</item>
     </style>
 </resources>
