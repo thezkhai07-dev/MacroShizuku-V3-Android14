@@ -173,7 +173,7 @@ public class MainActivity extends Activity {
         updateSpeedLabel.run();
         Spinner l=new Spinner(this);l.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"1 lần","5 lần","10 lần","Vô hạn"}));l.setSelection(m.loops==1?0:m.loops==5?1:m.loops==10?2:3);box.addView(l);
         TextView repeatDelayLabel=new TextView(this);repeatDelayLabel.setTextColor(0xFFF4F7FF);box.addView(repeatDelayLabel);
-        SeekBar repeatDelayBar=new SeekBar(this);repeatDelayBar.setMax(100);repeatDelayBar.setProgress(Math.max(0,Math.min(100,m.repeatDelayMs)));box.addView(repeatDelayBar);
+        SeekBar repeatDelayBar=new SeekBar(this);repeatDelayBar.setMax(1000);repeatDelayBar.setProgress(Math.max(0,Math.min(1000,m.repeatDelayMs)));box.addView(repeatDelayBar);
         repeatDelayLabel.setText("Độ trễ giữa các lần lặp: "+repeatDelayBar.getProgress()+" ms");
         repeatDelayBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){repeatDelayLabel.setText("Độ trễ giữa các lần lặp: "+p+" ms");}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         CheckBox f=new CheckBox(this);f.setText("Hiện nút nổi cho macro này");f.setChecked(m.floating);box.addView(f);
@@ -189,7 +189,7 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this).setTitle("Sửa macro").setView(box).setPositiveButton("Lưu",(d,w)->{
             m.name=n.getText().toString().trim();m.speed=Math.max(.25f,Math.min(10f,s.getProgress()/100f));
             m.loops=l.getSelectedItemPosition()==0?1:l.getSelectedItemPosition()==1?5:l.getSelectedItemPosition()==2?10:0;
-            m.repeatDelayMs=Math.max(0,Math.min(100,repeatDelayBar.getProgress()));
+            m.repeatDelayMs=Math.max(0,Math.min(1000,repeatDelayBar.getProgress()));
             m.floating=f.isChecked();m.buttonWidth=widthBar.getProgress()+48;m.buttonHeight=heightBar.getProgress()+48;
             MacroStore.upsert(this,m);if(Settings.canDrawOverlays(this))startService(new Intent(this,FloatingService.class).setAction("REFRESH"));refresh();
         }).setNegativeButton("Hủy",null).show();
