@@ -52,6 +52,7 @@ public class TouchRecordService extends AccessibilityService {
     private android.view.View stopOverlay;
     private final android.os.Handler stopOverlayHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private static volatile int lastHotkeyDispatchCode = 0;
+    private static volatile boolean volumeUpPressed = false;
     private volatile String volumeUpMacroId = "";
 
     private static final class TouchDevice {
@@ -429,10 +430,15 @@ public class TouchRecordService extends AccessibilityService {
     private void dispatchVolumeHotkey(int code, String source) {
         long now = SystemClock.elapsedRealtime();
         synchronized (TouchRecordService.class) {
-            // Accessibility and Shizuku may report the same physical key press.
-            // Suppress the duplicate event so a single press starts one playback.
-            if (code == lastHotkeyDispatchCode && now - lastHotkeyDispatchMs < 250) return;
-            lastHotkeyDispatchCode = code; lastHotkeyDispatchMs = now;
+            // A physical Volume Up hold can be reported by both Accessibility and
+            // Shizuku getevent. Latch the whole press, not just a 250 ms time window.
+            if (code == KeyEvent.KEYCODE_VOLUME_UP) {
+                if (volumeUpPressed) return;
+                volumeUpPressed = true;
+            } else {
+                if (code == lastHotkeyDispatchCode && now - lastHotkeyDispatchMs < 250) return;
+                lastHotkeyDispatchCode = code; lastHotkeyDispatchMs = now;
+            }
         }
         SharedPreferences prefs = getSharedPreferences("hotkeys", MODE_PRIVATE);
         boolean enabled = prefs.getBoolean("enabled", false);
@@ -521,6 +527,7 @@ public class TouchRecordService extends AccessibilityService {
 
     /** Releasing Volume Up stops any remaining passes; saved loop count remains the hard limit. */
     private void stopVolumeUpPlayback(String source) {
+        synchronized (TouchRecordService.class) { volumeUpPressed = false; }
         String id = volumeUpMacroId;
         if (id.isEmpty()) return;
         volumeUpMacroId = "";
