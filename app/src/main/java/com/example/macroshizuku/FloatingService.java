@@ -64,7 +64,7 @@ public class FloatingService extends Service {
         int stackY=dp(90);
         for(MacroStore.Macro m:macros)if(m.floating){addMacro(m,stackY);stackY+=dp((m.buttonHeight>0?m.buttonHeight:prefs().getInt("size",72))+8);}
         addMenuIcon();
-        if(menuOpen)showMenuPanel();
+        if(menuOpen&&!recording())showMenuPanel();
     }
     private void addMacro(MacroStore.Macro m,int defaultY){
         int h=m.buttonHeight>0?clamp(m.buttonHeight,36,400):clamp(prefs().getInt("size",72),36,400);
@@ -230,7 +230,7 @@ public class FloatingService extends Service {
         Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();showOverlayMessage(msg);
         refresh();
     }
-    @Override public int onStartCommand(Intent i,int f,int id){if("REFRESH".equals(i!=null?i.getAction():null))refresh();return START_STICKY;}
+    @Override public int onStartCommand(Intent i,int f,int id){if("REFRESH".equals(i!=null?i.getAction():null)||"RECORDING_STOPPED".equals(i!=null?i.getAction():null))refresh();return START_STICKY;}
     @Override public void onDestroy(){isRunning=false;removeViews();Player.stopAll();super.onDestroy();}
     @Override public IBinder onBind(Intent i){return null;}
 }
