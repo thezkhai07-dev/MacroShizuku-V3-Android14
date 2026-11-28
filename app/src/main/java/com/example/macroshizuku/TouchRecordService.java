@@ -440,6 +440,14 @@ public class TouchRecordService extends AccessibilityService {
             : "Đã dừng ghi macro nhưng chưa có thao tác nào. Hãy ghi lại rồi thử lại.";
         showRecordingStoppedMessage(message);
         android.util.Log.i("TouchRecordService", "Recording stopped by Volume Down; captured actions=" + count);
+        // Restore the floating control panel after the recording has ended.
+        try {
+            Intent refreshIntent = new Intent(this, FloatingService.class);
+            refreshIntent.setAction("RECORDING_STOPPED");
+            startService(refreshIntent);
+        } catch (Exception e) {
+            android.util.Log.w("TouchRecordService", "Unable to refresh floating menu after recording: " + e.getMessage());
+        }
     }
 
     private void showRecordingStoppedMessage(String message) {
