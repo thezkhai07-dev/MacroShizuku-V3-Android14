@@ -50,7 +50,7 @@ public class FloatingService extends Service {
         p.gravity=Gravity.TOP|Gravity.START;p.x=x;p.y=y;
         // Android 12+ can blur the real content behind translucent overlay windows.
         if(Build.VERSION.SDK_INT>=31){
-            try{p.setBackgroundBlurRadius(dp(28));p.flags|=WindowManager.LayoutParams.FLAG_BLUR_BEHIND;}catch(Exception ignored){}
+            try{p.setBlurBehindRadius(dp(28));p.flags|=WindowManager.LayoutParams.FLAG_BLUR_BEHIND;}catch(Exception ignored){}
         }
         return p;
     }
